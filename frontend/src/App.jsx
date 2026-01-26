@@ -5,6 +5,8 @@ import { transposeChordPro } from './utils/chords'
 import useMetronome from './hooks/useMetronome'
 import useWebSocket from './hooks/useWebSocket'
 import { save, load } from './utils/storage'
+import Nav from './components/Nav'
+import { getSongs, createSong, getSetlists, createSetlist } from './api'
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'))
@@ -12,6 +14,9 @@ function App() {
   const [semitones, setSemitones] = useState(0)
   const [sampleSong, setSampleSong] = useState('[C]Hello [G]world')
   const [metronomeOn, setMetronomeOn] = useState(false)
+  const [view, setView] = useState('dashboard')
+  const [songsList, setSongsList] = useState([])
+  const [setlistsList, setSetlistsList] = useState([])
 
   useMetronome(bpm, metronomeOn, () => {
     // could update UI on tick
@@ -52,6 +57,35 @@ function App() {
     if (token) validate()
   }, [token])
 
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const s = await getSongs(token)
+        setSongsList(s)
+      } catch (e) {}
+      try {
+        const sl = await getSetlists(token)
+        setSetlistsList(sl)
+      } catch (e) {}
+    }
+    if (token) loadData()
+  }, [token])
+
+  async function handleCreateSong() {
+    const title = prompt('Song title')
+    if (!title) return
+    const body = { title, content: sampleSong, tempo: bpm }
+    const r = await createSong(token, body)
+    if (r && r.id) setSongsList((p) => p.concat([{ _id: r.id, ...body }]))
+  }
+
+  async function handleCreateSetlist() {
+    const name = prompt('Setlist name')
+    if (!name) return
+    const r = await createSetlist(token, { name, songs: songsList.map((s) => s._id) })
+    if (r && r.id) setSetlistsList((p) => p.concat([{ _id: r.id, name, songs: songsList.map((s) => s._id) }]))
+  }
+
   if (!token) return <Auth onAuth={setToken} />
 
   return (
@@ -62,26 +96,58 @@ function App() {
           <button className={styles.logoutButton} onClick={() => { setToken(null) }}>Logout</button>
         </div>
       </header>
-      <main>
-        <section>
-          <h2>Playback</h2>
-          <div className={styles.playbackControls}>
-            <label>BPM</label>
-            <input type="number" value={bpm} onChange={(e) => setBpm(Number(e.target.value))} />
-            <button onClick={() => setMetronomeOn(!metronomeOn)}>
-              {metronomeOn ? 'Stop' : 'Start'}
-            </button>
-          </div>
-        </section>
 
-        <section>
-          <h2>Chord Transpose</h2>
-          <div>
-            <label>Semitones</label>
-            <input type="number" value={semitones} onChange={(e) => setSemitones(Number(e.target.value))} />
-          </div>
-          <pre className={styles.song}>{transposeChordPro(sampleSong, semitones)}</pre>
-        </section>
+      <Nav view={view} setView={setView} />
+
+      <main>
+        {view === 'dashboard' && (
+          <section>
+            <h2>Dashboard</h2>
+            <div>
+              <label>BPM</label>
+              <input type="number" value={bpm} onChange={(e) => setBpm(Number(e.target.value))} />
+              <label style={{ marginLeft: 10 }}>Metronome</label>
+              <input type="checkbox" checked={metronomeOn} onChange={(e) => setMetronomeOn(e.target.checked)} />
+            </div>
+          </section>
+        )}
+
+        {view === 'songs' && (
+          <section>
+            <h2>Songs</h2>
+            <button onClick={handleCreateSong}>Create song</button>
+            <ul>
+              {songsList.map((s) => (
+                <li key={String(s._id)}>
+                  <strong>{s.title}</strong> — {s.tempo || ''}
+                  <pre className={styles.song}>{s.content || ''}</pre>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {view === 'setlists' && (
+          <section>
+            <h2>Setlists</h2>
+            <button onClick={handleCreateSetlist}>Create setlist</button>
+            <ul>
+              {setlistsList.map((s) => (
+                <li key={String(s._id)}>
+                  <strong>{s.name}</strong>
+                  <div>{(s.songs || []).length} songs</div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {view === 'sessions' && (
+          <section>
+            <h2>Active Sessions</h2>
+            <p>Realtime sessions will appear here.</p>
+          </section>
+        )}
       </main>
     </div>
   )
