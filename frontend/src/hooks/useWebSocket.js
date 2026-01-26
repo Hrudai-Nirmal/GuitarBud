@@ -1,16 +1,19 @@
 import { useEffect, useRef } from 'react'
 
-// Hook: useWebSocket(path, onMessage)
+// Hook: useWebSocket(path, onMessage, options = {})
 // - path: e.g. '/ws' or '/'; appended to API base
 // - onMessage: function(parsedMessage)
-export default function useWebSocket(path, onMessage) {
+// - options: { token: string }
+export default function useWebSocket(path, onMessage, options = {}) {
+  const { token } = options || {}
   const wsRef = useRef(null)
   const reconnectRef = useRef(0)
   const shouldReconnect = useRef(true)
 
   useEffect(() => {
-    const base = (import.meta.env.VITE_API_BASE || 'http://localhost:4000').replace(/^http/, 'ws')
-    const url = base.replace(/^http/, 'ws') + path
+    const baseHttp = (import.meta.env.VITE_API_BASE || 'http://localhost:4000')
+    const base = baseHttp.replace(/^http/, 'ws')
+    const url = base + path + (token ? (`?token=${encodeURIComponent(token)}`) : '')
     let mounted = true
 
     function connect() {
@@ -60,7 +63,7 @@ export default function useWebSocket(path, onMessage) {
         wsRef.current = null
       }
     }
-  }, [path, onMessage])
+  }, [path, onMessage, token])
 
   function send(obj) {
     try {

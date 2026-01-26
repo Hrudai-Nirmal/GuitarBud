@@ -8,6 +8,7 @@ import { save, load } from './utils/storage'
 import Nav from './components/Nav'
 import { getSongs, createSong, getSetlists, createSetlist } from './api'
 import SongEditor from './components/SongEditor'
+import ChordDiagram from './components/ChordDiagram'
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'))
@@ -22,6 +23,45 @@ function App() {
   useMetronome(bpm, metronomeOn, () => {
     // could update UI on tick
   })
+
+  // create or join session
+  const [sessionList, setSessionList] = useState([])
+  const ws = useWebSocket('/', (msg) => {
+    if (msg && msg.type === 'session:update') {
+      // naive merge/update
+      setSessionList((prev) => {
+        const idx = prev.findIndex((s) => s.sessionId === msg.payload.sessionId)
+        if (idx === -1) return prev.concat([msg.payload])
+        const copy = prev.slice(); copy[idx] = msg.payload; return copy
+      })
+    }
+  }, { token })
+
+  async function fetchActiveSessions() {
+    try {
+      const res = await fetch((import.meta.env.VITE_API_BASE || '') + '/api/sessions/active')
+      const list = await res.json()
+      setSessionList(list)
+    } catch (e) {
+      console.warn('fetch sessions failed', e.message)
+    }
+  }
+
+  useEffect(() => { fetchActiveSessions() }, [])
+
+  async function createSession() {
+    const sessionId = 's_' + Math.random().toString(36).slice(2, 9)
+    const payload = { sessionId, songId: (songsList[0] && songsList[0]._id) || null, position: 0, bpm }
+    ws.send({ type: 'session:update', payload })
+    // persist via API
+    await fetch((import.meta.env.VITE_API_BASE || '') + '/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ sessionId, payload }) })
+    setSessionList((p) => p.concat([payload]))
+  }
+
+  async function joinSession(sid) {
+    // naive join: open WS already connected with token, client should sync the session
+    alert('Joined session ' + sid)
+  }
 
   useWebSocket('/', (msg) => {
     // handle session updates broadcast from server
@@ -124,6 +164,23 @@ function App() {
                 if (r && r.id) setSongsList((p) => p.concat([{ _id: r.id, title: payload.title || 'Untitled', content: payload.content || payload, tempo: bpm }]))
               }} />
             </div>
+            <ul>
+              {songsList.map((s) => (
+                <li key={String(s._id)}>
+                  <strong>{s.title}</strong> — {s.tempo || ''}
+                  <pre className={styles.song}>{s.content || ''}</pre>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {/* find chord tokens in content e.g. [C] */}
+                    {Array.from((s.content || '').matchAll(/\[([^\]]+)\]/g)).slice(0,6).map((m, idx) => (
+                      <div key={idx} style={{ width: 120 }}>
+                        <div style={{ color: '#ddd' }}>{m[1]}</div>
+                        <ChordDiagram token={m[1]} />
+                      </div>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 
@@ -145,7 +202,18 @@ function App() {
         {view === 'sessions' && (
           <section>
             <h2>Active Sessions</h2>
-            <p>Realtime sessions will appear here.</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={createSession}>Create Session</button>
+              <button onClick={fetchActiveSessions}>Refresh</button>
+            </div>
+            <ul>
+              {sessionList.map((s) => (
+                <li key={s.sessionId}>
+                  <strong>{s.sessionId}</strong> — song: {s.songId || 'none'} — bpm: {s.payload?.bpm || s.bpm || ''}
+                  <button onClick={() => joinSession(s.sessionId)}>Join</button>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
       </main>
