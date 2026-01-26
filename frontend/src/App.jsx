@@ -7,6 +7,7 @@ import useWebSocket from './hooks/useWebSocket'
 import { save, load } from './utils/storage'
 import Nav from './components/Nav'
 import { getSongs, createSong, getSetlists, createSetlist } from './api'
+import SongEditor from './components/SongEditor'
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'))
@@ -115,15 +116,14 @@ function App() {
         {view === 'songs' && (
           <section>
             <h2>Songs</h2>
-            <button onClick={handleCreateSong}>Create song</button>
-            <ul>
-              {songsList.map((s) => (
-                <li key={String(s._id)}>
-                  <strong>{s.title}</strong> — {s.tempo || ''}
-                  <pre className={styles.song}>{s.content || ''}</pre>
-                </li>
-              ))}
-            </ul>
+            <button onClick={handleCreateSong}>Create song (prompt)</button>
+            <div style={{ marginTop: 12 }}>
+              <h3>Quick editor</h3>
+              <SongEditor initial={sampleSong} onSave={async (payload) => {
+                const r = await createSong(token, { title: payload.title || 'Untitled', content: payload.content || payload, tempo: bpm });
+                if (r && r.id) setSongsList((p) => p.concat([{ _id: r.id, title: payload.title || 'Untitled', content: payload.content || payload, tempo: bpm }]))
+              }} />
+            </div>
           </section>
         )}
 
