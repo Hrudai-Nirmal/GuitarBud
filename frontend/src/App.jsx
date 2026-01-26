@@ -39,6 +39,19 @@ function App() {
     save('prefs', { bpm })
   }, [bpm])
 
+  useEffect(() => {
+    // attempt to get /api/me to validate token
+    async function validate() {
+      try {
+        const res = await fetch((import.meta.env.VITE_API_BASE || '') + '/api/me', { headers: { Authorization: 'Bearer ' + token } })
+        if (!res.ok) throw new Error('invalid')
+      } catch (e) {
+        setToken(null)
+      }
+    }
+    if (token) validate()
+  }, [token])
+
   if (!token) return <Auth onAuth={setToken} />
 
   return (

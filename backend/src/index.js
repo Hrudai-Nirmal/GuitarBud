@@ -50,8 +50,45 @@ async function start() {
     if (existing) return res.status(409).json({ error: 'user_exists' });
     const bcrypt = require('bcrypt');
     const hashed = await bcrypt.hash(password, 10);
-    const result = await users.insertOne({ email, password: hashed, createdAt: new Date() });
-    return res.json({ id: result.insertedId, email });
+    const verifyToken = require('crypto').randomBytes(24).toString('hex');
+    const result = await users.insertOne({ email, password: hashed, createdAt: new Date(), verified: false, verifyToken });
+    // In production send email; in dev return token so client can verify
+    const resp = { id: result.insertedId, email };
+    if (process.env.NODE_ENV !== 'production') resp.verifyToken = verifyToken;
+    return res.json(resp);
+  });
+
+  app.post('/auth/verify', async (req, res) => {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'invalid_input' });
+    const u = await users.findOneAndUpdate({ verifyToken: token }, { $set: { verified: true }, $unset: { verifyToken: '' } });
+    if (!u.value) return res.status(400).json({ error: 'invalid_token' });
+    return res.json({ ok: true });
+  });
+
+  app.post('/auth/request-reset', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'invalid_input' });
+    const u = await users.findOne({ email });
+    if (!u) return res.json({ ok: true }); // don't reveal existence
+    const token = require('crypto').randomBytes(24).toString('hex');
+    const expires = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
+    await users.updateOne({ _id: u._id }, { $set: { resetToken: token, resetExpires: expires } });
+    // In prod send email. Return token in dev.
+    const resp = { ok: true };
+    if (process.env.NODE_ENV !== 'production') resp.resetToken = token;
+    return res.json(resp);
+  });
+
+  app.post('/auth/reset', async (req, res) => {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ error: 'invalid_input' });
+    const u = await users.findOne({ resetToken: token, resetExpires: { $gt: new Date() } });
+    if (!u) return res.status(400).json({ error: 'invalid_token' });
+    const bcrypt = require('bcrypt');
+    const hashed = await bcrypt.hash(password, 10);
+    await users.updateOne({ _id: u._id }, { $set: { password: hashed }, $unset: { resetToken: '', resetExpires: '' } });
+    return res.json({ ok: true });
   });
 
   app.post('/auth/login', async (req, res) => {

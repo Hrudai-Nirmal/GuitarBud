@@ -19,7 +19,15 @@ export default function Auth({ onAuth }) {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'failed')
       if (mode === 'login') onAuth(data.token)
-      else setMode('login')
+      else {
+        // if register returned a verifyToken in dev, automatically verify
+        if (data.verifyToken) {
+          await fetch((import.meta.env.VITE_API_BASE || '') + '/auth/verify', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: data.verifyToken })
+          })
+        }
+        setMode('login')
+      }
     } catch (e) {
       setError(e.message)
     }
