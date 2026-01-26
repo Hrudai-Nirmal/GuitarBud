@@ -125,13 +125,48 @@ async function start() {
   const server = http.createServer(app);
   const wss = new WebSocket.Server({ server });
 
-  // Minimal session sync: clients send {type:'session:update', payload:{...}}
-  wss.on('connection', (ws) => {
-    ws.on('message', (msg) => {
+  // expose current user
+  app.get('/api/me', authMiddleware, (req, res) => {
+    res.json({ id: req.user.sub, email: req.user.email });
+  });
+
+  // Authenticate WebSocket connections using ?token=<jwt>
+  wss.on('connection', (ws, req) => {
+    let userId = null;
+    try {
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      const token = url.searchParams.get('token');
+      if (!token) {
+        ws.close(4001, 'missing_token');
+        return;
+      }
+      const data = jwt.verify(token, JWT_SECRET);
+      userId = data.sub;
+      ws.user = data;
+    } catch (e) {
+      try { ws.close(4002, 'invalid_token') } catch (err) {}
+      return;
+    }
+
+    ws.on('message', async (msg) => {
       try {
         const data = JSON.parse(msg.toString());
         if (data && data.type === 'session:update') {
-          // broadcast to all connected clients except sender
+          const payload = data.payload || {};
+          // persist session minimal state when sessionId present
+          if (payload.sessionId) {
+            try {
+              await sessions.updateOne(
+                { sessionId: payload.sessionId },
+                { $set: { owner: userId, updatedAt: new Date(), payload } },
+                { upsert: true }
+              );
+            } catch (e) {
+              console.warn('session persist error', e.message);
+            }
+          }
+
+          // broadcast to other clients
           wss.clients.forEach((c) => {
             if (c !== ws && c.readyState === WebSocket.OPEN) c.send(JSON.stringify(data));
           });
