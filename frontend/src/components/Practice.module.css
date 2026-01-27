@@ -101,6 +101,7 @@
   background: linear-gradient(180deg, #0b0b0b, #070707);
   height: 100%;
   min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .emptyState {
@@ -121,8 +122,52 @@
 @media (max-width: 768px) {
   .container {
     grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
   }
   .sidebar {
-    max-height: 40vh;
+    max-height: 35vh;
+    min-height: 150px;
+  }
+  .main {
+    padding: 12px;
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    gap: 8px;
+    padding: 8px;
+  }
+  .sidebar {
+    max-height: 30vh;
+    min-height: 120px;
+    padding: 8px;
+    border-radius: 8px;
+  }
+  .songList {
+    gap: 4px;
+  }
+  .songItem {
+    padding: 10px 12px;
+    border-radius: 6px;
+  }
+  .songTitle {
+    font-size: 0.9rem;
+  }
+  .songArtist {
+    font-size: 0.75rem;
+  }
+  .main {
+    padding: 10px;
+    border-radius: 8px;
+  }
+}
+
+/* Touch-friendly targets */
+@media (hover: none) and (pointer: coarse) {
+  .songItem {
+    min-height: 48px;
   }
 }

@@ -9,6 +9,7 @@
   flex: 1;
   width: 100%;
   max-width: 100%;
+  touch-action: manipulation; /* Improve touch response */
 }
 
 /* Header */
@@ -188,6 +189,7 @@
   min-height: 0;
   width: 100%;
   max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .content {
@@ -200,6 +202,8 @@
   line-height: 1.6;
   width: 100%;
   max-width: 100%;
+  -webkit-overflow-scrolling: touch; /* Enable momentum scrolling on iOS */
+  touch-action: pan-y; /* Allow vertical touch scrolling */
 }
 
 /* Sheet content */
@@ -462,4 +466,400 @@
 .star {
   color: #ffc107;
   font-size: 1rem;
+}
+
+/* ===========================================
+   RESPONSIVE STYLES - TABLET (768px and below)
+   =========================================== */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .songTitle {
+    font-size: 1.4rem;
+  }
+
+  .artistName {
+    font-size: 0.9rem;
+  }
+
+  .meta {
+    gap: 12px;
+  }
+
+  .metaItem {
+    font-size: 0.8rem;
+  }
+
+  .controls {
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .controlGroup {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .controlBtn {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+  }
+
+  .speedLabel {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .speedLabel input[type="range"] {
+    width: 100px;
+  }
+
+  .mediaRow {
+    flex-direction: column;
+  }
+
+  .videoEmbed iframe {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16/9;
+  }
+
+  .chordStrip {
+    gap: 8px;
+    padding: 10px 0;
+  }
+
+  .chordCard {
+    min-width: 70px;
+  }
+
+  .chordName {
+    font-size: 0.75rem;
+  }
+
+  .sheetContent {
+    padding: 12px;
+  }
+
+  .barNumber {
+    width: 32px;
+    font-size: 0.7rem;
+    margin-right: 8px;
+  }
+
+  .barNumberSmall {
+    width: 24px;
+    font-size: 0.65rem;
+  }
+
+  .beatGridWithBar .beatGrid {
+    width: 90px;
+  }
+
+  .beatCell {
+    padding: 6px 2px;
+    font-size: 0.6rem;
+  }
+
+  .barContent {
+    padding: 4px 8px;
+  }
+
+  .chordToken {
+    min-width: 40px;
+    font-size: 0.85rem;
+  }
+
+  .lyricText, .lyricsText {
+    font-size: 0.9rem;
+  }
+
+  .tabsText {
+    font-size: 0.8rem;
+  }
+
+  .barIndicator {
+    font-size: 0.75rem;
+    min-width: 100px;
+  }
+
+  .versionList {
+    flex-direction: column;
+  }
+
+  .versionItem {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ===========================================
+   RESPONSIVE STYLES - PHONE (480px and below)
+   =========================================== */
+@media (max-width: 480px) {
+  .viewer {
+    gap: 8px;
+  }
+
+  .header {
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  .songTitle {
+    font-size: 1.2rem;
+  }
+
+  .artistName {
+    font-size: 0.8rem;
+  }
+
+  .meta {
+    gap: 8px;
+  }
+
+  .metaItem {
+    font-size: 0.75rem;
+  }
+
+  .bpmInput {
+    width: 50px;
+    padding: 3px 4px;
+    font-size: 0.8rem;
+  }
+
+  .controls {
+    padding: 8px;
+    gap: 8px;
+    border-radius: 8px;
+  }
+
+  .controlGroup {
+    gap: 6px;
+  }
+
+  .controlBtn {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    border-radius: 6px;
+  }
+
+  .speedLabel {
+    font-size: 0.75rem;
+  }
+
+  .speedLabel input[type="range"] {
+    width: 80px;
+  }
+
+  .audioPlayer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .audioPlayer audio {
+    width: 100%;
+    height: 32px;
+  }
+
+  .videoEmbed iframe {
+    min-height: 180px;
+  }
+
+  .chordStrip {
+    gap: 6px;
+    padding: 8px 0;
+  }
+
+  .chordCard {
+    min-width: 60px;
+  }
+
+  .chordName {
+    font-size: 0.7rem;
+  }
+
+  .contentWrapper {
+    border-radius: 8px;
+  }
+
+  .sheetContent {
+    padding: 8px;
+  }
+
+  .content {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .barLine {
+    margin-bottom: 2px;
+    border-radius: 4px;
+  }
+
+  .barNumber {
+    width: 28px;
+    font-size: 0.65rem;
+    margin-right: 6px;
+  }
+
+  .barNumberSmall {
+    width: 20px;
+    font-size: 0.6rem;
+  }
+
+  .beatGridWithBar {
+    margin-right: 6px;
+  }
+
+  .beatGridWithBar .beatGrid {
+    width: 70px;
+  }
+
+  .beatCell {
+    padding: 4px 1px;
+    font-size: 0.55rem;
+  }
+
+  .barContent {
+    padding: 3px 6px;
+  }
+
+  .chordLine {
+    font-size: 0.85rem;
+  }
+
+  .chordToken {
+    min-width: 35px;
+    margin-right: 6px;
+    font-size: 0.8rem;
+  }
+
+  .lyricText, .lyricsText {
+    font-size: 0.85rem;
+  }
+
+  .tabsText {
+    font-size: 0.75rem;
+  }
+
+  .sectionHeader {
+    margin: 12px 0 6px 0;
+    padding: 6px 0;
+    font-size: 0.9rem;
+  }
+
+  .countInText {
+    font-size: 0.8rem;
+  }
+
+  .barIndicator {
+    font-size: 0.7rem;
+    min-width: 90px;
+    padding: 0 4px;
+  }
+
+  .otherVersions h3 {
+    font-size: 0.9rem;
+  }
+
+  .versionItem {
+    padding: 8px 12px;
+  }
+
+  .versionTeacher {
+    font-size: 0.8rem;
+  }
+
+  .rating {
+    font-size: 0.75rem;
+  }
+
+  .star {
+    font-size: 0.9rem;
+  }
+
+  /* Touch-friendly scrollbar */
+  .content::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+}
+
+/* ===========================================
+   TOUCH DEVICE OPTIMIZATIONS
+   =========================================== */
+@media (hover: none) and (pointer: coarse) {
+  .controlBtn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .versionItem {
+    min-height: 44px;
+  }
+
+  .bpmInput {
+    min-height: 36px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+
+  /* Ensure content area is scrollable on touch devices */
+  .content {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+  }
+
+  .contentWrapper {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent accidental horizontal scroll */
+  .sheetContent {
+    touch-action: pan-y;
+  }
+
+  .barLine {
+    touch-action: pan-y;
+  }
+}
+
+/* ===========================================
+   LANDSCAPE PHONE OPTIMIZATION
+   =========================================== */
+@media (max-height: 500px) and (orientation: landscape) {
+  .header {
+    padding-bottom: 8px;
+  }
+
+  .controls {
+    padding: 6px 10px;
+  }
+
+  .controlBtn {
+    padding: 6px 10px;
+  }
+
+  .chordStrip {
+    padding: 6px 0;
+  }
+
+  .chordCard {
+    min-width: 50px;
+  }
+
+  .mediaRow {
+    max-height: 120px;
+    overflow: hidden;
+  }
+
+  .videoEmbed {
+    display: none; /* Hide video in landscape to save space */
+  }
 }
