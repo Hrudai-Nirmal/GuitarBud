@@ -4,12 +4,13 @@
   flex-direction: column;
   padding: 0;
   background: linear-gradient(180deg, #0b0b0f 0%, #080808 100%);
+  width: 100%;
 }
 
 /* Hero Section */
 .heroSection {
   text-align: center;
-  padding: 48px 24px 32px;
+  padding: 60px 24px 40px;
 }
 
 .heroTitle {
@@ -32,10 +33,10 @@
 .bentoGrid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  grid-auto-rows: minmax(120px, auto);
-  gap: 16px;
-  padding: 0 24px 32px;
-  max-width: 900px;
+  grid-auto-rows: minmax(140px, auto);
+  gap: 20px;
+  padding: 0 48px 48px;
+  max-width: 1400px;
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
@@ -71,19 +72,19 @@
 .large {
   grid-column: span 4;
   grid-row: span 2;
-  min-height: 200px;
+  min-height: 280px;
 }
 
 .medium {
   grid-column: span 2;
   grid-row: span 2;
-  min-height: 200px;
+  min-height: 280px;
 }
 
 .small {
   grid-column: span 2;
   grid-row: span 1;
-  min-height: 100px;
+  min-height: 130px;
 }
 
 /* Gradient Backgrounds */
