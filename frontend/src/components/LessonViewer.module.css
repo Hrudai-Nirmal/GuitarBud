@@ -472,6 +472,15 @@
    RESPONSIVE STYLES - TABLET (768px and below)
    =========================================== */
 @media (max-width: 768px) {
+  .viewer {
+    gap: 10px;
+    padding: 12px;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .header {
     flex-direction: column;
     gap: 12px;

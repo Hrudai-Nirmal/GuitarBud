@@ -122,46 +122,88 @@
 @media (max-width: 768px) {
   .container {
     grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 12px;
+    gap: 0;
+    padding: 0;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile browsers */
   }
+
+  /* When showing just the sidebar (song list) */
   .sidebar {
-    max-height: 35vh;
-    min-height: 150px;
+    max-height: none;
+    min-height: 0;
+    height: 100%;
+    border-right: none;
+    padding: 16px;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
   }
-  .main {
-    padding: 12px;
-    border-radius: 10px;
+
+  /* When showing the lesson full-screen */
+  .container.mobileLesson {
+    display: flex;
+    flex-direction: column;
   }
+
+  .container.mobileLesson .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    border-radius: 0;
+  }
+}
+
+/* Mobile back button for lesson view */
+.mobileBackBtn {
+  background: rgba(100, 108, 255, 0.1);
+  border: 1px solid rgba(100, 108, 255, 0.3);
+  color: #9fb7ff;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.mobileBackBtn:hover {
+  background: rgba(100, 108, 255, 0.2);
+  color: #fff;
 }
 
 @media (max-width: 480px) {
   .container {
-    gap: 8px;
-    padding: 8px;
+    gap: 0;
+    padding: 0;
   }
   .sidebar {
-    max-height: 30vh;
-    min-height: 120px;
-    padding: 8px;
-    border-radius: 8px;
+    padding: 12px;
+    padding-top: max(12px, env(safe-area-inset-top));
+    border-radius: 0;
   }
   .songList {
     gap: 4px;
   }
   .songItem {
-    padding: 10px 12px;
-    border-radius: 6px;
+    padding: 14px 12px;
+    border-radius: 8px;
   }
   .songTitle {
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
   .songArtist {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
   }
   .main {
-    padding: 10px;
-    border-radius: 8px;
+    padding: 0;
+    border-radius: 0;
+  }
+  .mobileBackBtn {
+    padding: 14px 12px;
+    font-size: 0.9rem;
   }
 }
 

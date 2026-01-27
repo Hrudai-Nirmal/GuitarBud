@@ -10,6 +10,16 @@ export default function Practice({ token, onBack }) {
   const [selectedSong, setSelectedSong] = useState(null)
   const [selectedVersion, setSelectedVersion] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+
+  // Track window resize for mobile detection
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Load recent lesson from storage
   useEffect(() => {
@@ -68,59 +78,78 @@ export default function Practice({ token, onBack }) {
       console.error('failed to load version', e)
     }
   }
-
   function handleSelectVersion(ver) {
     setSelectedVersion(ver)
     save('recentLesson', { versionId: ver._id, songId: ver.songId })
   }
 
-  return (
-    <div className={styles.container}>
-      {/* Left sidebar */}
-      <aside className={styles.sidebar}>
-        <button className={styles.backBtn} onClick={onBack}>← Dashboard</button>
-        <input
-          className={styles.searchInput}
-          type="text"
-          placeholder="Search songs..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <div className={styles.songList}>
-          {loading && <div className={styles.loading}>Loading...</div>}
-          {!loading && songs.length === 0 && query && (
-            <div className={styles.empty}>No songs found</div>
-          )}
-          {songs.map((song) => (
-            <button
-              key={song._id}
-              className={`${styles.songItem} ${selectedSong?._id === song._id ? styles.selected : ''}`}
-              onClick={() => handleSelectSong(song)}
-            >
-              <span className={styles.songTitle}>{song.title}</span>
-              <span className={styles.songArtist}>{song.artist || 'Unknown Artist'}</span>
-            </button>
-          ))}
-        </div>
-      </aside>
+  // Mobile: go back to song list
+  function handleBackToList() {
+    setSelectedSong(null)
+    setSelectedVersion(null)
+  }
 
-      {/* Main lesson area */}
-      <main className={styles.main}>
-        {!selectedVersion ? (
-          <div className={styles.emptyState}>
-            <h2>Get started with a song from the sidebar</h2>
-            <p>Search and select a song to begin your practice session.</p>
-          </div>
-        ) : (
-          <LessonViewer
-            song={selectedSong}
-            version={selectedVersion}
-            allVersions={selectedSong?.versions || []}
-            onSelectVersion={handleSelectVersion}
-            token={token}
+  // On mobile, show either the list OR the lesson (not both)
+  const showMobileLesson = isMobile && selectedVersion
+
+  return (
+    <div className={`${styles.container} ${showMobileLesson ? styles.mobileLesson : ''}`}>
+      {/* Left sidebar - hidden on mobile when lesson is open */}
+      {!showMobileLesson && (
+        <aside className={styles.sidebar}>
+          <button className={styles.backBtn} onClick={onBack}>← Dashboard</button>
+          <input
+            className={styles.searchInput}
+            type="text"
+            placeholder="Search songs..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
           />
-        )}
-      </main>
+          <div className={styles.songList}>
+            {loading && <div className={styles.loading}>Loading...</div>}
+            {!loading && songs.length === 0 && query && (
+              <div className={styles.empty}>No songs found</div>
+            )}
+            {songs.map((song) => (
+              <button
+                key={song._id}
+                className={`${styles.songItem} ${selectedSong?._id === song._id ? styles.selected : ''}`}
+                onClick={() => handleSelectSong(song)}
+              >
+                <span className={styles.songTitle}>{song.title}</span>
+                <span className={styles.songArtist}>{song.artist || 'Unknown Artist'}</span>
+              </button>
+            ))}
+          </div>
+        </aside>
+      )}
+
+      {/* Main lesson area - full screen on mobile when lesson is open */}
+      {(showMobileLesson || !isMobile) && (
+        <main className={styles.main}>
+          {!selectedVersion ? (
+            <div className={styles.emptyState}>
+              <h2>Get started with a song from the sidebar</h2>
+              <p>Search and select a song to begin your practice session.</p>
+            </div>
+          ) : (
+            <>
+              {isMobile && (
+                <button className={styles.mobileBackBtn} onClick={handleBackToList}>
+                  ← Back to Songs
+                </button>
+              )}
+              <LessonViewer
+                song={selectedSong}
+                version={selectedVersion}
+                allVersions={selectedSong?.versions || []}
+                onSelectVersion={handleSelectVersion}
+                token={token}
+              />
+            </>
+          )}
+        </main>
+      )}
     </div>
   )
 }
