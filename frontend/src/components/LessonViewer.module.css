@@ -170,7 +170,7 @@
   color: #fff;
 }
 
-/* Content area - DAW-style layout */
+/* Content area - full width layout */
 .contentWrapper {
   flex: 1;
   display: flex;
@@ -180,112 +180,104 @@
   overflow: hidden;
   min-height: 400px;
   max-height: 60vh;
+  width: 100%;
 }
 
 .content {
   flex: 1;
   overflow-y: auto;
-  overflow-x: auto;
+  overflow-x: hidden;
   position: relative;
   font-family: 'Courier New', monospace;
   font-size: 1rem;
   line-height: 1.6;
+  width: 100%;
 }
 
-.contentInner {
-  display: inline-block;
-  min-width: 100%;
-  position: relative;
+/* Sheet content */
+.sheetContent {
+  padding: 16px;
+  width: 100%;
 }
 
-/* DAW-style beat grid - vertical lines */
-.beatGrid {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
+/* Bar-based layout - each line is a bar */
+.barLine {
   display: flex;
-  z-index: 0;
+  align-items: stretch;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  transition: background 0.15s;
+  width: 100%;
 }
 
-.beatLine {
-  flex-shrink: 0;
-  width: 60px;
-  height: 100%;
-  border-right: 1px solid rgba(100, 108, 255, 0.15);
-  box-sizing: border-box;
-}
-
-.beatLine.major {
-  border-right: 2px solid rgba(100, 108, 255, 0.4);
-}
-
-.beatLine.current {
+.barLine.activeBar {
   background: rgba(100, 108, 255, 0.1);
 }
 
-/* Beat header - shows beat numbers */
-.beatHeader {
+/* Beat grid - horizontal cells within each bar */
+.beatGrid {
   display: flex;
-  background: rgba(20, 20, 25, 0.95);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  min-width: fit-content;
-}
-
-.beatMarker {
   flex-shrink: 0;
-  width: 60px;
-  padding: 6px 4px;
-  text-align: center;
+  width: 140px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  margin-right: 12px;
+}
+
+.beatCell {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
   font-size: 0.7rem;
-  color: #666;
+  color: #555;
   border-right: 1px solid rgba(255, 255, 255, 0.05);
-  box-sizing: border-box;
+  transition: background 0.1s, color 0.1s;
 }
 
-.beatMarker.major {
-  color: #888;
+.beatCell:last-child {
+  border-right: none;
+}
+
+.beatCell.activeBeat {
+  background: rgba(100, 108, 255, 0.4);
+  color: #fff;
   font-weight: 600;
-  background: rgba(100, 108, 255, 0.05);
 }
 
-/* Sheet content that sits on top of grid */
-.sheetContent {
-  position: relative;
-  z-index: 1;
-  padding: 16px;
-  min-width: fit-content;
-}
-
-.lyricLine {
-  margin-bottom: 8px;
+/* Bar content - lyrics and chords */
+.barContent {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: fit-content;
+  justify-content: center;
+  padding: 6px 0;
+  min-width: 0;
 }
 
 .chordLine {
   color: #6ff;
   font-weight: 600;
-  white-space: pre;
-  min-width: fit-content;
+  white-space: nowrap;
+  margin-bottom: 2px;
 }
 
-.lyricsBlock, .tabsBlock {
-  margin-bottom: 16px;
-  min-width: fit-content;
-  position: relative;
+.chordToken {
+  display: inline-block;
+  min-width: 50px;
+  margin-right: 8px;
+}
+
+.lyricText {
+  color: #ddd;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 .lyricsText, .tabsText {
   margin: 0;
-  white-space: pre;
-  min-width: fit-content;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 .tabsText {
@@ -293,13 +285,29 @@
   font-size: 0.9rem;
 }
 
-/* Chord alignment for DAW grid */
-.chordToken {
-  display: inline-block;
-  min-width: 60px;
-  color: #6ff;
+/* Section headers */
+.sectionHeader {
+  color: #888;
   font-weight: 600;
+  margin: 20px 0 8px 0;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+.emptyLine {
+  height: 8px;
+}
+
+/* Bar indicator in controls */
+.barIndicator {
+  color: #888;
+  font-size: 0.85rem;
+  padding: 0 8px;
+  min-width: 120px;
+  text-align: center;
+}
+
+/* Scrollbar styling for content area */
 
 /* Scrollbar styling for content area */
 .content::-webkit-scrollbar {

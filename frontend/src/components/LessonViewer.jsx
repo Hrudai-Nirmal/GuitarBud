@@ -17,21 +17,63 @@ function parseTimeSignature(ts) {
   return { beats: parseInt(parts[0]) || 4, noteValue: parseInt(parts[1]) || 4 }
 }
 
-// Render content with chords above lyrics - DAW aligned
-function renderContent(content, blocks) {
+// Render content with chords above lyrics - DAW aligned with bar-based grid
+function renderContent(content, blocks, { timeSig, showGrid, currentBar, currentBeat, lineRefs }) {
   // If blocks exist, render block-based content
   if (blocks && blocks.length > 0) {
+    let barIndex = 0
     return blocks.map((block, idx) => {
       if (block.type === 'lyrics') {
-        return (
-          <div key={idx} className={styles.lyricsBlock}>
-            <pre className={styles.lyricsText}>{renderChordProLine(block.data)}</pre>
-          </div>
-        )
+        const lines = (block.data || '').split('\n')
+        return lines.map((line, li) => {
+          const thisBar = barIndex++
+          return (
+            <div 
+              key={`${idx}-${li}`} 
+              ref={el => lineRefs.current[thisBar] = el}
+              className={`${styles.barLine} ${thisBar === currentBar ? styles.activeBar : ''}`}
+            >
+              {showGrid && (
+                <div className={styles.beatGrid}>
+                  {Array.from({ length: timeSig.beats }, (_, b) => (
+                    <div 
+                      key={b} 
+                      className={`${styles.beatCell} ${thisBar === currentBar && b === currentBeat ? styles.activeBeat : ''}`}
+                    >
+                      {b + 1}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className={styles.barContent}>
+                <pre className={styles.lyricsText}>{renderChordProLine(line)}</pre>
+              </div>
+            </div>
+          )
+        })
       } else if (block.type === 'tabs') {
+        const thisBar = barIndex++
         return (
-          <div key={idx} className={styles.tabsBlock}>
-            <pre className={styles.tabsText}>{renderTabs(block.data)}</pre>
+          <div 
+            key={idx} 
+            ref={el => lineRefs.current[thisBar] = el}
+            className={`${styles.barLine} ${thisBar === currentBar ? styles.activeBar : ''}`}
+          >
+            {showGrid && (
+              <div className={styles.beatGrid}>
+                {Array.from({ length: timeSig.beats }, (_, b) => (
+                  <div 
+                    key={b} 
+                    className={`${styles.beatCell} ${thisBar === currentBar && b === currentBeat ? styles.activeBeat : ''}`}
+                  >
+                    {b + 1}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className={styles.barContent}>
+              <pre className={styles.tabsText}>{renderTabs(block.data)}</pre>
+            </div>
           </div>
         )
       }
@@ -42,6 +84,8 @@ function renderContent(content, blocks) {
   // Fallback: render ChordPro content with beat alignment
   if (!content) return null
   const lines = content.split('\n')
+  let barIndex = 0
+  
   return lines.map((line, i) => {
     // Extract chords and positions
     const chordRegex = /\[([^\]]+)\]/g
@@ -57,23 +101,45 @@ function renderContent(content, blocks) {
       const sectionKeywords = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'pre-chorus', 'interlude', 'solo', 'tab', 'riff']
       const isSection = sectionKeywords.some(k => chords[0].chord.toLowerCase().includes(k))
       if (isSection) {
-        return <div key={i} className={styles.lyricLine} style={{ color: '#888', fontWeight: 600, marginTop: '16px' }}>[{chords[0].chord}]</div>
+        return <div key={i} className={styles.sectionHeader}>[{chords[0].chord}]</div>
       }
     }
     
-    if (chords.length === 0) {
-      return <div key={i} className={styles.lyricLine}>{textLine || '\u00A0'}</div>
+    // Skip empty lines from bar counting
+    if (!line.trim()) {
+      return <div key={i} className={styles.emptyLine}>&nbsp;</div>
     }
 
-    // Render chords with fixed-width spans for DAW grid alignment
+    const thisBar = barIndex++
+
     return (
-      <div key={i} className={styles.lyricLine}>
-        <div className={styles.chordLine}>
-          {chords.map((c, ci) => (
-            <span key={ci} className={styles.chordToken}>{c.chord}</span>
-          ))}
+      <div 
+        key={i} 
+        ref={el => lineRefs.current[thisBar] = el}
+        className={`${styles.barLine} ${thisBar === currentBar ? styles.activeBar : ''}`}
+      >
+        {showGrid && (
+          <div className={styles.beatGrid}>
+            {Array.from({ length: timeSig.beats }, (_, b) => (
+              <div 
+                key={b} 
+                className={`${styles.beatCell} ${thisBar === currentBar && b === currentBeat ? styles.activeBeat : ''}`}
+              >
+                {b + 1}
+              </div>
+            ))}
+          </div>
+        )}
+        <div className={styles.barContent}>
+          {chords.length > 0 && (
+            <div className={styles.chordLine}>
+              {chords.map((c, ci) => (
+                <span key={ci} className={styles.chordToken}>{c.chord}</span>
+              ))}
+            </div>
+          )}
+          <div className={styles.lyricText}>{textLine || '\u00A0'}</div>
         </div>
-        <div>{textLine || '\u00A0'}</div>
       </div>
     )
   })
@@ -113,21 +179,20 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
   const [metronomeOn, setMetronomeOn] = useState(false)
   const [autoscroll, setAutoscroll] = useState(false)
   const [scrollSpeed, setScrollSpeed] = useState(1)
+  const [currentBar, setCurrentBar] = useState(0)
   const [currentBeat, setCurrentBeat] = useState(0)
   const [showGrid, setShowGrid] = useState(false)
   
   const contentRef = useRef(null)
-  const scrollIntervalRef = useRef(null)
+  const lineRefs = useRef([])
 
   const timeSig = parseTimeSignature(version?.timeSignature)
   const chords = extractChords(version?.content || '')
   
-  // Calculate number of beats to show based on content length
-  const totalBeats = useMemo(() => {
+  // Count total lines/bars in content
+  const totalBars = useMemo(() => {
     const content = version?.content || ''
-    // Rough estimate: ~4 beats per line
-    const lines = content.split('\n').length
-    return Math.max(32, lines * 4)
+    return content.split('\n').filter(l => l.trim()).length
   }, [version?.content])
 
   // Update BPM when version changes
@@ -135,32 +200,40 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
     if (version?.bpm) setBpm(version.bpm)
   }, [version])
 
-  // Metronome
-  useMetronome(bpm, metronomeOn, useCallback(() => {
-    setCurrentBeat(b => b + 1)
-  }, []))
-
-  // Autoscroll
+  // Reset beat/bar when autoscroll starts/stops
   useEffect(() => {
-    if (autoscroll && contentRef.current) {
-      const pxPerBeat = scrollSpeed * 2 // pixels per beat
-      const msPerBeat = (60 / bpm) * 1000
-      scrollIntervalRef.current = setInterval(() => {
-        if (contentRef.current) {
-          contentRef.current.scrollTop += pxPerBeat
-        }
-      }, msPerBeat)
+    if (!autoscroll) {
+      setCurrentBeat(0)
+      setCurrentBar(0)
     }
-    return () => {
-      if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current)
-    }
-  }, [autoscroll, bpm, scrollSpeed])
+  }, [autoscroll])
 
-  function jumpBeats(delta) {
-    if (!contentRef.current) return
-    const pxPerBeat = scrollSpeed * 2
-    contentRef.current.scrollTop += delta * pxPerBeat
-    setCurrentBeat(b => Math.max(0, b + delta))
+  // Metronome with bar-based beat tracking
+  useMetronome(bpm, metronomeOn || autoscroll, useCallback(() => {
+    setCurrentBeat(b => {
+      const nextBeat = b + 1
+      if (nextBeat >= timeSig.beats) {
+        // Move to next bar
+        setCurrentBar(bar => bar + 1)
+        return 0
+      }
+      return nextBeat
+    })
+  }, [timeSig.beats]))
+
+  // Scroll to current bar when it changes
+  useEffect(() => {
+    if (autoscroll && contentRef.current && lineRefs.current[currentBar]) {
+      lineRefs.current[currentBar].scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      })
+    }
+  }, [currentBar, autoscroll])
+
+  function jumpBars(delta) {
+    setCurrentBar(b => Math.max(0, Math.min(totalBars - 1, b + delta)))
+    setCurrentBeat(0)
   }
 
   // YouTube embed
@@ -241,13 +314,13 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
               onChange={(e) => setScrollSpeed(parseFloat(e.target.value))}
             />
           </label>
-        </div>
-        <div className={styles.controlGroup}>
-          <button className={styles.controlBtn} onClick={() => jumpBeats(-timeSig.beats)}>
-            ◀ {timeSig.beats} beats
+        </div>        <div className={styles.controlGroup}>
+          <button className={styles.controlBtn} onClick={() => jumpBars(-1)}>
+            ◀ Bar
           </button>
-          <button className={styles.controlBtn} onClick={() => jumpBeats(timeSig.beats)}>
-            {timeSig.beats} beats ▶
+          <span className={styles.barIndicator}>Bar {currentBar + 1} / Beat {currentBeat + 1}</span>
+          <button className={styles.controlBtn} onClick={() => jumpBars(1)}>
+            Bar ▶
           </button>
         </div>
       </div>
@@ -284,41 +357,17 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
               <span className={styles.chordName}>{chord}</span>
             </div>
           ))}
-        </div>
-      )}      {/* Content with DAW-style grid */}
+        </div>      )}      {/* Content with bar-based grid */}
       <div className={styles.contentWrapper}>
-        {/* Beat header - shows beat numbers */}
-        {showGrid && (
-          <div className={styles.beatHeader}>
-            {Array.from({ length: totalBeats }, (_, i) => (
-              <div 
-                key={i} 
-                className={`${styles.beatMarker} ${(i % timeSig.beats === 0) ? styles.major : ''}`}
-              >
-                {(i % timeSig.beats === 0) ? `${Math.floor(i / timeSig.beats) + 1}` : (i % timeSig.beats) + 1}
-              </div>
-            ))}
-          </div>
-        )}
-        
         <div ref={contentRef} className={styles.content}>
-          <div className={styles.contentInner}>
-            {/* Beat grid - vertical lines */}
-            {showGrid && (
-              <div className={styles.beatGrid}>
-                {Array.from({ length: totalBeats }, (_, i) => (
-                  <div 
-                    key={i} 
-                    className={`${styles.beatLine} ${(i % timeSig.beats === 0) ? styles.major : ''} ${i === currentBeat ? styles.current : ''}`}
-                  />
-                ))}
-              </div>
-            )}
-            
-            {/* Sheet content */}
-            <div className={styles.sheetContent}>
-              {renderContent(version.content, version.blocks)}
-            </div>
+          <div className={styles.sheetContent}>
+            {renderContent(version.content, version.blocks, { 
+              timeSig, 
+              showGrid, 
+              currentBar, 
+              currentBeat, 
+              lineRefs 
+            })}
           </div>
         </div>
       </div>
