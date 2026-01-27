@@ -3,6 +3,8 @@ import styles from './App.module.css'
 import Auth from './components/Auth'
 import Dashboard from './components/Dashboard'
 import Practice from './components/Practice'
+import Tuner from './components/Tuner'
+import ChordCharts from './components/ChordCharts'
 import { apiFetch } from './api'
 import { save, load } from './utils/storage'
 
@@ -91,19 +93,11 @@ function App() {
       )}
 
       {view === 'tuner' && (
-        <div className={styles.placeholder}>
-          <h2>Tuner</h2>
-          <p>Coming soon...</p>
-          <button onClick={() => setView('dashboard')}>Back to Dashboard</button>
-        </div>
+        <Tuner onBack={() => setView('dashboard')} />
       )}
 
       {view === 'chords' && (
-        <div className={styles.placeholder}>
-          <h2>Chord Charts</h2>
-          <p>Coming soon...</p>
-          <button onClick={() => setView('dashboard')}>Back to Dashboard</button>
-        </div>
+        <ChordCharts onBack={() => setView('dashboard')} />
       )}
 
       {view === 'mylessons' && (
