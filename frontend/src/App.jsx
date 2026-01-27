@@ -52,8 +52,10 @@ function App() {
 
   if (!token) return <Auth onAuth={handleAuth} />
 
+  const isFullScreen = view === 'practice'
+
   return (
-    <div className={styles.app}>
+    <div className={`${styles.app} ${isFullScreen ? styles.fullScreen : ''}`}>
       <header className={styles.header}>
         <h1 className={styles.logo}>🎸 GuitarBuddy</h1>
         <div className={styles.headerRight}>
