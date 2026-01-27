@@ -17,6 +17,19 @@ const PORT = process.env.PORT || 4000;
 const MONGODB_URI = process.env.MONGODB_URI;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 
+// Initialize SendGrid if configured
+let sgMail = null;
+if (process.env.SENDGRID_API_KEY) {
+  try {
+    sgMail = require('@sendgrid/mail');
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    console.log('SendGrid initialized');
+  } catch (e) {
+    console.warn('SendGrid initialization failed', e.message || e);
+    sgMail = null;
+  }
+}
+
 if (!MONGODB_URI) {
   console.error('MONGODB_URI not set. Exiting.');
   process.exit(1);
@@ -26,8 +39,17 @@ let dbClient;
 let db;
 
 async function start() {
-  dbClient = new MongoClient(MONGODB_URI);
-  await dbClient.connect();
+  // Provide a sensible server selection timeout and log masked host for debugging
+  const clientOpts = { serverSelectionTimeoutMS: 15000 };
+  dbClient = new MongoClient(MONGODB_URI, clientOpts);
+  try {
+    console.log('Connecting to MongoDB (masked):', (MONGODB_URI || '').replace(/(mongodb\+srv:\/\/)[^@]+@/, '$1***@'));
+    await dbClient.connect();
+  } catch (err) {
+    console.error('MongoDB connection error. Common causes: Atlas IP access list blocking Render, invalid URI, or TLS handshake issues.');
+    console.error('Full error:', err.message || err);
+    throw err;
+  }
   db = dbClient.db();
   console.log('Connected to MongoDB');
 
@@ -54,7 +76,26 @@ async function start() {
     const result = await users.insertOne({ email, password: hashed, createdAt: new Date(), verified: false, verifyToken });
     // In production send email; in dev return token so client can verify
     const resp = { id: result.insertedId, email };
-    if (process.env.NODE_ENV !== 'production') resp.verifyToken = verifyToken;
+
+    // If SendGrid configured and EMAIL_FROM present, send verification email
+    if (sgMail && process.env.EMAIL_FROM) {
+      const verifyUrl = `${process.env.CORS_ORIGIN || 'http://localhost:5173'}/verify?token=${verifyToken}`;
+      try {
+        await sgMail.send({
+          to: email,
+          from: process.env.EMAIL_FROM,
+          subject: 'GuitarBuddy Account Verification',
+          text: `Verify your GuitarBuddy account by visiting: ${verifyUrl}\n\nOr use this token: ${verifyToken}`,
+          html: `<p>Verify your GuitarBuddy account by clicking <a href="${verifyUrl}">this link</a></p><p>Or use this token: <code>${verifyToken}</code></p>`
+        });
+      } catch (e) {
+        console.warn('sendgrid send error', e.message || e);
+      }
+    } else if (process.env.NODE_ENV !== 'production') {
+      // fallback behavior for development/testing
+      resp.verifyToken = verifyToken;
+    }
+
     return res.json(resp);
   });
 
@@ -74,9 +115,25 @@ async function start() {
     const token = require('crypto').randomBytes(24).toString('hex');
     const expires = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
     await users.updateOne({ _id: u._id }, { $set: { resetToken: token, resetExpires: expires } });
-    // In prod send email. Return token in dev.
+
+    // If SendGrid configured send reset email
+    if (sgMail && process.env.EMAIL_FROM) {
+      const resetUrl = `${process.env.CORS_ORIGIN || 'http://localhost:5173'}/reset?token=${token}`;
+      try {
+        await sgMail.send({
+          to: email,
+          from: process.env.EMAIL_FROM,
+          subject: 'GuitarBuddy Password Reset',
+          text: `Reset your GuitarBuddy password: ${resetUrl}\n\nOr use this token: ${token}`,
+          html: `<p>Reset your GuitarBuddy password by clicking <a href="${resetUrl}">this link</a></p><p>Or use this token: <code>${token}</code></p>`
+        });
+      } catch (e) {
+        console.warn('sendgrid send error', e.message || e);
+      }
+    }
+
     const resp = { ok: true };
-    if (process.env.NODE_ENV !== 'production') resp.resetToken = token;
+    if (process.env.NODE_ENV !== 'production' && !sgMail) resp.resetToken = token;
     return res.json(resp);
   });
 
@@ -156,6 +213,18 @@ async function start() {
     payload.createdAt = new Date();
     const result = await sessions.insertOne(payload);
     res.json({ id: result.insertedId });
+  });
+
+  // sessions endpoints
+  app.get('/api/sessions', authMiddleware, async (req, res) => {
+    const list = await sessions.find({ owner: req.user.sub }).toArray();
+    res.json(list);
+  });
+
+  // public listing of recent active sessions (read-only)
+  app.get('/api/sessions/active', async (req, res) => {
+    const list = await sessions.find({}).sort({ updatedAt: -1 }).limit(50).toArray();
+    res.json(list);
   });
 
   // Start HTTP + WebSocket server
