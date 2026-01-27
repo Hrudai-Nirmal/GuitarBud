@@ -1,10 +1,11 @@
 .viewer {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   color: #eee;
   height: 100%;
   min-height: 0;
+  overflow: hidden;
 }
 
 /* Header */
@@ -178,8 +179,7 @@
   background: rgba(10,10,12,0.8);
   border-radius: 10px;
   overflow: hidden;
-  min-height: 400px;
-  max-height: 60vh;
+  min-height: 0;
   width: 100%;
 }
 
@@ -239,10 +239,28 @@
   border-right: none;
 }
 
-.beatCell.activeBeat {
-  background: rgba(100, 108, 255, 0.4);
-  color: #fff;
+/* Compact mode - just bar number */
+.barNumber {
+  flex-shrink: 0;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
   font-weight: 600;
+  color: #666;
+  background: rgba(100, 108, 255, 0.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  margin-right: 12px;
+}
+
+.compactBar .barNumber {
+  color: #888;
+}
+
+.compactBar.activeBar .barNumber {
+  background: rgba(100, 108, 255, 0.2);
+  color: #fff;
 }
 
 /* Bar content - lyrics and chords */

@@ -18,7 +18,7 @@ function parseTimeSignature(ts) {
 }
 
 // Render content with chords above lyrics - DAW aligned with bar-based grid
-function renderContent(content, blocks, { timeSig, showGrid, currentBar, currentBeat, lineRefs }) {
+function renderContent(content, blocks, { timeSig, showGrid, compactMode, currentBar, currentBeat, lineRefs }) {
   // If blocks exist, render block-based content
   if (blocks && blocks.length > 0) {
     let barIndex = 0
@@ -31,19 +31,23 @@ function renderContent(content, blocks, { timeSig, showGrid, currentBar, current
             <div 
               key={`${idx}-${li}`} 
               ref={el => lineRefs.current[thisBar] = el}
-              className={`${styles.barLine} ${thisBar === currentBar ? styles.activeBar : ''}`}
+              className={`${styles.barLine} ${thisBar === currentBar ? styles.activeBar : ''} ${compactMode ? styles.compactBar : ''}`}
             >
               {showGrid && (
-                <div className={styles.beatGrid}>
-                  {Array.from({ length: timeSig.beats }, (_, b) => (
-                    <div 
-                      key={b} 
-                      className={`${styles.beatCell} ${thisBar === currentBar && b === currentBeat ? styles.activeBeat : ''}`}
-                    >
-                      {b + 1}
-                    </div>
-                  ))}
-                </div>
+                compactMode ? (
+                  <div className={styles.barNumber}>{thisBar + 1}</div>
+                ) : (
+                  <div className={styles.beatGrid}>
+                    {Array.from({ length: timeSig.beats }, (_, b) => (
+                      <div 
+                        key={b} 
+                        className={styles.beatCell}
+                      >
+                        {b + 1}
+                      </div>
+                    ))}
+                  </div>
+                )
               )}
               <div className={styles.barContent}>
                 <pre className={styles.lyricsText}>{renderChordProLine(line)}</pre>
@@ -57,19 +61,23 @@ function renderContent(content, blocks, { timeSig, showGrid, currentBar, current
           <div 
             key={idx} 
             ref={el => lineRefs.current[thisBar] = el}
-            className={`${styles.barLine} ${thisBar === currentBar ? styles.activeBar : ''}`}
+            className={`${styles.barLine} ${thisBar === currentBar ? styles.activeBar : ''} ${compactMode ? styles.compactBar : ''}`}
           >
             {showGrid && (
-              <div className={styles.beatGrid}>
-                {Array.from({ length: timeSig.beats }, (_, b) => (
-                  <div 
-                    key={b} 
-                    className={`${styles.beatCell} ${thisBar === currentBar && b === currentBeat ? styles.activeBeat : ''}`}
-                  >
-                    {b + 1}
-                  </div>
-                ))}
-              </div>
+              compactMode ? (
+                <div className={styles.barNumber}>{thisBar + 1}</div>
+              ) : (
+                <div className={styles.beatGrid}>
+                  {Array.from({ length: timeSig.beats }, (_, b) => (
+                    <div 
+                      key={b} 
+                      className={styles.beatCell}
+                    >
+                      {b + 1}
+                    </div>
+                  ))}
+                </div>
+              )
             )}
             <div className={styles.barContent}>
               <pre className={styles.tabsText}>{renderTabs(block.data)}</pre>
@@ -108,27 +116,29 @@ function renderContent(content, blocks, { timeSig, showGrid, currentBar, current
     // Skip empty lines from bar counting
     if (!line.trim()) {
       return <div key={i} className={styles.emptyLine}>&nbsp;</div>
-    }
-
-    const thisBar = barIndex++
+    }    const thisBar = barIndex++
 
     return (
       <div 
         key={i} 
         ref={el => lineRefs.current[thisBar] = el}
-        className={`${styles.barLine} ${thisBar === currentBar ? styles.activeBar : ''}`}
+        className={`${styles.barLine} ${thisBar === currentBar ? styles.activeBar : ''} ${compactMode ? styles.compactBar : ''}`}
       >
         {showGrid && (
-          <div className={styles.beatGrid}>
-            {Array.from({ length: timeSig.beats }, (_, b) => (
-              <div 
-                key={b} 
-                className={`${styles.beatCell} ${thisBar === currentBar && b === currentBeat ? styles.activeBeat : ''}`}
-              >
-                {b + 1}
-              </div>
-            ))}
-          </div>
+          compactMode ? (
+            <div className={styles.barNumber}>{thisBar + 1}</div>
+          ) : (
+            <div className={styles.beatGrid}>
+              {Array.from({ length: timeSig.beats }, (_, b) => (
+                <div 
+                  key={b} 
+                  className={styles.beatCell}
+                >
+                  {b + 1}
+                </div>
+              ))}
+            </div>
+          )
         )}
         <div className={styles.barContent}>
           {chords.length > 0 && (
@@ -182,6 +192,7 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
   const [currentBar, setCurrentBar] = useState(0)
   const [currentBeat, setCurrentBeat] = useState(0)
   const [showGrid, setShowGrid] = useState(false)
+  const [compactMode, setCompactMode] = useState(true) // Compact: just bar numbers
   
   const contentRef = useRef(null)
   const lineRefs = useRef([])
@@ -282,17 +293,23 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
           )}
           <span className={styles.metaItem}>Time: <strong>{version.timeSignature || '4/4'}</strong></span>
         </div>
-      </header>
-
-      {/* Controls */}
+      </header>      {/* Controls */}
       <div className={styles.controls}>
         <div className={styles.controlGroup}>
           <button 
             className={`${styles.controlBtn} ${showGrid ? styles.active : ''}`}
             onClick={() => setShowGrid(!showGrid)}
           >
-            Grid {showGrid ? 'ON' : 'OFF'}
+            Bars {showGrid ? 'ON' : 'OFF'}
           </button>
+          {showGrid && (
+            <button 
+              className={`${styles.controlBtn} ${!compactMode ? styles.active : ''}`}
+              onClick={() => setCompactMode(!compactMode)}
+            >
+              {compactMode ? 'Beats' : 'Compact'}
+            </button>
+          )}
           <button 
             className={`${styles.controlBtn} ${metronomeOn ? styles.active : ''}`}
             onClick={() => setMetronomeOn(!metronomeOn)}
@@ -307,7 +324,7 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
           </button>
           <label className={styles.speedLabel}>
             Speed:
-            <input 
+            <input
               type="range" 
               min={0.5} max={3} step={0.1} 
               value={scrollSpeed}
@@ -363,7 +380,8 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
           <div className={styles.sheetContent}>
             {renderContent(version.content, version.blocks, { 
               timeSig, 
-              showGrid, 
+              showGrid,
+              compactMode,
               currentBar, 
               currentBeat, 
               lineRefs 
