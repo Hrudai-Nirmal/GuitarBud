@@ -6,7 +6,7 @@ import { getChordsByRoot, getChordsForRoot } from '../utils/chordLibrary'
 const ROOTS = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']
 const ENHARMONIC = { 'A#': 'Bb', 'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab' }
 
-export default function ChordCharts({ onBack }) {
+export default function ChordCharts() {
   const [selectedRoot, setSelectedRoot] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   
@@ -28,7 +28,6 @@ export default function ChordCharts({ onBack }) {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <button className={styles.backBtn} onClick={onBack}>← Back</button>
         <h2>Chord Library</h2>
       </div>
 

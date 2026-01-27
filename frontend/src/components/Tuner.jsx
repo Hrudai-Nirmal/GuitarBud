@@ -100,7 +100,7 @@ function autoCorrelate(buffer, sampleRate) {
   return -1
 }
 
-export default function Tuner({ onBack }) {
+export default function Tuner() {
   const [isListening, setIsListening] = useState(false)
   const [frequency, setFrequency] = useState(null)
   const [noteInfo, setNoteInfo] = useState(null)
@@ -220,11 +220,9 @@ export default function Tuner({ onBack }) {
   }
   
   const status = getTuningStatus()
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <button className={styles.backBtn} onClick={onBack}>← Back</button>
         <h2>Guitar Tuner</h2>
       </div>
 

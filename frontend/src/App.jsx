@@ -52,61 +52,73 @@ function App() {
 
   if (!token) return <Auth onAuth={handleAuth} />
 
-  const isFullScreen = view === 'practice'
+  // All views except dashboard show header; dashboard is full-screen bento
+  const showHeader = view !== 'dashboard'
 
   return (
-    <div className={`${styles.app} ${isFullScreen ? styles.fullScreen : ''}`}>
-      <header className={styles.header}>
-        <h1 className={styles.logo}>🎸 GuitarBuddy</h1>
-        <div className={styles.headerRight}>
-          <span className={styles.roleTag}>{userRole}</span>
-          <button className={styles.logoutBtn} onClick={handleLogout}>Logout</button>
-        </div>
-      </header>
+    <div className={styles.app}>
+      {showHeader && (
+        <header className={styles.header}>
+          <button className={styles.backBtn} onClick={() => setView('dashboard')}>
+            ← Back
+          </button>
+          <h1 className={styles.logo}>🎸 GuitarBuddy</h1>
+          <div className={styles.headerRight}>
+            <span className={styles.roleTag}>{userRole}</span>
+            <button className={styles.logoutBtn} onClick={handleLogout}>Logout</button>
+          </div>
+        </header>
+      )}
 
       {view === 'dashboard' && (
         <Dashboard 
           onNavigate={setView} 
           userRole={userRole}
+          onLogout={handleLogout}
         />
       )}
 
       {view === 'practice' && (
         <Practice 
           token={token}
-          onBack={() => setView('dashboard')}
         />
       )}
 
       {view === 'downloads' && (
         <div className={styles.placeholder}>
-          <h2>Downloaded Lessons</h2>
-          <p>Coming soon...</p>
-          <button onClick={() => setView('dashboard')}>Back to Dashboard</button>
+          <div className={styles.placeholderContent}>
+            <span className={styles.placeholderIcon}>⬇️</span>
+            <h2>Downloaded Lessons</h2>
+            <p>Your offline lessons will appear here.</p>
+          </div>
         </div>
       )}
 
       {view === 'performance' && (
         <div className={styles.placeholder}>
-          <h2>Performance Mode</h2>
-          <p>Song Editor, Setlist Editor, Sessions — Coming soon...</p>
-          <button onClick={() => setView('dashboard')}>Back to Dashboard</button>
+          <div className={styles.placeholderContent}>
+            <span className={styles.placeholderIcon}>🎤</span>
+            <h2>Performance Mode</h2>
+            <p>Song Editor, Setlist Editor, Sessions — Coming soon...</p>
+          </div>
         </div>
       )}
 
       {view === 'tuner' && (
-        <Tuner onBack={() => setView('dashboard')} />
+        <Tuner />
       )}
 
       {view === 'chords' && (
-        <ChordCharts onBack={() => setView('dashboard')} />
+        <ChordCharts />
       )}
 
       {view === 'mylessons' && (
         <div className={styles.placeholder}>
-          <h2>My Lessons</h2>
-          <p>Your purchased lessons will appear here.</p>
-          <button onClick={() => setView('dashboard')}>Back to Dashboard</button>
+          <div className={styles.placeholderContent}>
+            <span className={styles.placeholderIcon}>📚</span>
+            <h2>My Lessons</h2>
+            <p>Your purchased lessons will appear here.</p>
+          </div>
         </div>
       )}
     </div>

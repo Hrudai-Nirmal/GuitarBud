@@ -4,7 +4,7 @@ import LessonViewer from './LessonViewer'
 import { apiFetch } from '../api'
 import { save, load } from '../utils/storage'
 
-export default function Practice({ token, onBack }) {
+export default function Practice({ token }) {
   const [query, setQuery] = useState('')
   const [songs, setSongs] = useState([])
   const [selectedSong, setSelectedSong] = useState(null)
@@ -94,10 +94,8 @@ export default function Practice({ token, onBack }) {
 
   return (
     <div className={`${styles.container} ${showMobileLesson ? styles.mobileLesson : ''}`}>
-      {/* Left sidebar - hidden on mobile when lesson is open */}
-      {!showMobileLesson && (
+      {/* Left sidebar - hidden on mobile when lesson is open */}      {!showMobileLesson && (
         <aside className={styles.sidebar}>
-          <button className={styles.backBtn} onClick={onBack}>← Dashboard</button>
           <input
             className={styles.searchInput}
             type="text"
