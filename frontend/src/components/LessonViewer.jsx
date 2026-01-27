@@ -128,13 +128,12 @@ function renderContent(content, blocks, { timeSig, showGrid, compactMode, curren
     })
     return elements
   }
-
   // Fallback: render ChordPro content with beat alignment
   if (!content) return elements
   const lines = content.split('\n')
   let barIndex = 0
   
-  return lines.map((line, i) => {
+  lines.forEach((line, i) => {
     // Extract chords and positions
     const chordRegex = /\[([^\]]+)\]/g
     let match
@@ -149,14 +148,18 @@ function renderContent(content, blocks, { timeSig, showGrid, compactMode, curren
       const sectionKeywords = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'pre-chorus', 'interlude', 'solo', 'tab', 'riff']
       const isSection = sectionKeywords.some(k => chords[0].chord.toLowerCase().includes(k))
       if (isSection) {
-        return <div key={i} className={styles.sectionHeader}>[{chords[0].chord}]</div>
+        elements.push(<div key={i} className={styles.sectionHeader}>[{chords[0].chord}]</div>)
+        return
       }
     }
     
     // Skip empty lines from bar counting
     if (!line.trim()) {
-      return <div key={i} className={styles.emptyLine}>&nbsp;</div>
-    }    const thisBar = barIndex++
+      elements.push(<div key={i} className={styles.emptyLine}>&nbsp;</div>)
+      return
+    }
+    
+    const thisBar = barIndex++
 
     elements.push(
       <div 
