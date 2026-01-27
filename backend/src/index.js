@@ -3,14 +3,14 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 const http = require('http');
 const WebSocket = require('ws');
 
 const app = express();
 app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173' }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(morgan('dev'));
 
 const PORT = process.env.PORT || 4000;
@@ -39,45 +39,57 @@ let dbClient;
 let db;
 
 async function start() {
-  // Provide a sensible server selection timeout and log masked host for debugging
   const clientOpts = { serverSelectionTimeoutMS: 15000 };
   dbClient = new MongoClient(MONGODB_URI, clientOpts);
   try {
     console.log('Connecting to MongoDB (masked):', (MONGODB_URI || '').replace(/(mongodb\+srv:\/\/)[^@]+@/, '$1***@'));
     await dbClient.connect();
   } catch (err) {
-    console.error('MongoDB connection error. Common causes: Atlas IP access list blocking Render, invalid URI, or TLS handshake issues.');
-    console.error('Full error:', err.message || err);
+    console.error('MongoDB connection error:', err.message || err);
     throw err;
   }
   db = dbClient.db();
   console.log('Connected to MongoDB');
 
-  // Basic health check
-  app.get('/health', (req, res) => res.json({ ok: true }));
-
-  // Serve simple root
-  app.get('/', (req, res) => res.json({ ok: true, service: 'GuitarBuddy API' }));
-
-  // Auth and API routes (minimal)
+  // Collections
   const users = db.collection('users');
   const songs = db.collection('songs');
+  const versions = db.collection('versions');
   const setlists = db.collection('setlists');
   const sessions = db.collection('sessions');
 
+  // Create indexes
+  await songs.createIndex({ title: 'text', artist: 'text' });
+  await versions.createIndex({ songId: 1 });
+  await versions.createIndex({ monetized: 1 });
+
+  // Health check
+  app.get('/health', (req, res) => res.json({ ok: true }));
+  app.get('/', (req, res) => res.json({ ok: true, service: 'GuitarBuddy API' }));
+
+  // ========== AUTH ==========
   app.post('/auth/register', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, role, resume } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'invalid_input' });
     const existing = await users.findOne({ email });
     if (existing) return res.status(409).json({ error: 'user_exists' });
     const bcrypt = require('bcrypt');
     const hashed = await bcrypt.hash(password, 10);
     const verifyToken = require('crypto').randomBytes(24).toString('hex');
-    const result = await users.insertOne({ email, password: hashed, createdAt: new Date(), verified: false, verifyToken });
-    // In production send email; in dev return token so client can verify
-    const resp = { id: result.insertedId, email };
+    const userData = { 
+      email, 
+      password: hashed, 
+      role: role || 'student',
+      resume: resume || null,
+      verified: role === 'student', // students auto-verified, teachers need admin approval (but we auto-approve for now)
+      createdAt: new Date(), 
+      verifyToken 
+    };
+    // For now, auto-verify teachers too
+    userData.verified = true;
+    const result = await users.insertOne(userData);
+    const resp = { id: result.insertedId, email, role: userData.role };
 
-    // If SendGrid configured and EMAIL_FROM present, send verification email
     if (sgMail && process.env.EMAIL_FROM) {
       const verifyUrl = `${process.env.CORS_ORIGIN || 'http://localhost:5173'}/verify?token=${verifyToken}`;
       try {
@@ -85,17 +97,15 @@ async function start() {
           to: email,
           from: process.env.EMAIL_FROM,
           subject: 'GuitarBuddy Account Verification',
-          text: `Verify your GuitarBuddy account by visiting: ${verifyUrl}\n\nOr use this token: ${verifyToken}`,
-          html: `<p>Verify your GuitarBuddy account by clicking <a href="${verifyUrl}">this link</a></p><p>Or use this token: <code>${verifyToken}</code></p>`
+          text: `Verify your account: ${verifyUrl}`,
+          html: `<p>Verify your account: <a href="${verifyUrl}">${verifyUrl}</a></p>`
         });
       } catch (e) {
-        console.warn('sendgrid send error', e.message || e);
+        console.warn('sendgrid error', e.message);
       }
     } else if (process.env.NODE_ENV !== 'production') {
-      // fallback behavior for development/testing
       resp.verifyToken = verifyToken;
     }
-
     return res.json(resp);
   });
 
@@ -111,12 +121,11 @@ async function start() {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'invalid_input' });
     const u = await users.findOne({ email });
-    if (!u) return res.json({ ok: true }); // don't reveal existence
+    if (!u) return res.json({ ok: true });
     const token = require('crypto').randomBytes(24).toString('hex');
-    const expires = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
+    const expires = new Date(Date.now() + 1000 * 60 * 60);
     await users.updateOne({ _id: u._id }, { $set: { resetToken: token, resetExpires: expires } });
 
-    // If SendGrid configured send reset email
     if (sgMail && process.env.EMAIL_FROM) {
       const resetUrl = `${process.env.CORS_ORIGIN || 'http://localhost:5173'}/reset?token=${token}`;
       try {
@@ -124,14 +133,13 @@ async function start() {
           to: email,
           from: process.env.EMAIL_FROM,
           subject: 'GuitarBuddy Password Reset',
-          text: `Reset your GuitarBuddy password: ${resetUrl}\n\nOr use this token: ${token}`,
-          html: `<p>Reset your GuitarBuddy password by clicking <a href="${resetUrl}">this link</a></p><p>Or use this token: <code>${token}</code></p>`
+          text: `Reset password: ${resetUrl}`,
+          html: `<p>Reset password: <a href="${resetUrl}">${resetUrl}</a></p>`
         });
       } catch (e) {
-        console.warn('sendgrid send error', e.message || e);
+        console.warn('sendgrid error', e.message);
       }
     }
-
     const resp = { ok: true };
     if (process.env.NODE_ENV !== 'production' && !sgMail) resp.resetToken = token;
     return res.json(resp);
@@ -157,20 +165,19 @@ async function start() {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ error: 'invalid_credentials' });
     const jwt = require('jsonwebtoken');
-    const token = jwt.sign({ sub: String(user._id), email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    return res.json({ token });
+    const token = jwt.sign({ sub: String(user._id), email: user.email, role: user.role || 'student' }, JWT_SECRET, { expiresIn: '7d' });
+    return res.json({ token, role: user.role || 'student' });
   });
 
-  // Protected helper
+  // JWT middleware
   const jwt = require('jsonwebtoken');
   function authMiddleware(req, res, next) {
     const auth = req.headers.authorization;
     if (!auth) return res.status(401).json({ error: 'missing_token' });
     const parts = auth.split(' ');
     if (parts.length !== 2) return res.status(401).json({ error: 'invalid_token' });
-    const token = parts[1];
     try {
-      const data = jwt.verify(token, JWT_SECRET);
+      const data = jwt.verify(parts[1], JWT_SECRET);
       req.user = data;
       next();
     } catch (e) {
@@ -178,21 +185,104 @@ async function start() {
     }
   }
 
-  // CRUD for songs (minimal)
-  app.get('/api/songs', authMiddleware, async (req, res) => {
-    const list = await songs.find({ owner: req.user.sub }).toArray();
+  app.get('/api/me', authMiddleware, (req, res) => {
+    res.json({ id: req.user.sub, email: req.user.email, role: req.user.role });
+  });
+
+  // ========== SONGS (public catalog) ==========
+  // Search songs (public)
+  app.get('/api/songs/search', async (req, res) => {
+    const { q } = req.query;
+    let query = {};
+    if (q && q.trim()) {
+      query = { $text: { $search: q } };
+    }
+    const list = await songs.find(query).limit(50).toArray();
     res.json(list);
   });
 
+  // Get single song with non-monetized versions
+  app.get('/api/songs/:id', async (req, res) => {
+    try {
+      const song = await songs.findOne({ _id: new ObjectId(req.params.id) });
+      if (!song) return res.status(404).json({ error: 'not_found' });
+      const vers = await versions.find({ songId: String(song._id), monetized: { $ne: true } }).toArray();
+      res.json({ ...song, versions: vers });
+    } catch (e) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+  });
+
+  // Get a specific version
+  app.get('/api/versions/:id', async (req, res) => {
+    try {
+      const ver = await versions.findOne({ _id: new ObjectId(req.params.id), monetized: { $ne: true } });
+      if (!ver) return res.status(404).json({ error: 'not_found' });
+      const song = await songs.findOne({ _id: new ObjectId(ver.songId) });
+      res.json({ ...ver, song });
+    } catch (e) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+  });
+
+  // ========== TEACHER: Create/update songs & versions ==========
+  // Create song (teacher only)
   app.post('/api/songs', authMiddleware, async (req, res) => {
-    const payload = req.body;
-    payload.owner = req.user.sub;
-    payload.createdAt = new Date();
-    const result = await songs.insertOne(payload);
+    if (req.user.role !== 'teacher') return res.status(403).json({ error: 'teachers_only' });
+    const { title, artist } = req.body;
+    if (!title) return res.status(400).json({ error: 'title_required' });
+    const result = await songs.insertOne({ title, artist: artist || '', createdAt: new Date() });
     res.json({ id: result.insertedId });
   });
 
-  // minimal setlists
+  // Create version for a song (teacher only)
+  app.post('/api/songs/:songId/versions', authMiddleware, async (req, res) => {
+    if (req.user.role !== 'teacher') return res.status(403).json({ error: 'teachers_only' });
+    const { songId } = req.params;
+    const { content, key, bpm, capo, timeSignature, backingTrackUrl, youtubeUrl, blocks, monetized } = req.body;
+    // blocks: [{ type: 'lyrics'|'tabs', beatStart, beatEnd, data }]
+    const user = await users.findOne({ _id: new ObjectId(req.user.sub) });
+    const versionData = {
+      songId,
+      teacherId: req.user.sub,
+      teacherName: user?.email || 'Unknown',
+      content: content || '',
+      key: key || 'C',
+      bpm: bpm || 120,
+      capo: capo || 0,
+      timeSignature: timeSignature || '4/4',
+      backingTrackUrl: backingTrackUrl || null,
+      youtubeUrl: youtubeUrl || null,
+      blocks: blocks || [],
+      rating: 0,
+      ratingCount: 0,
+      monetized: monetized || false,
+      createdAt: new Date()
+    };
+    const result = await versions.insertOne(versionData);
+    res.json({ id: result.insertedId });
+  });
+
+  // Rate a version (authenticated)
+  app.post('/api/versions/:id/rate', authMiddleware, async (req, res) => {
+    const { rating } = req.body;
+    if (typeof rating !== 'number' || rating < 0 || rating > 5) {
+      return res.status(400).json({ error: 'invalid_rating' });
+    }
+    try {
+      const ver = await versions.findOne({ _id: new ObjectId(req.params.id) });
+      if (!ver) return res.status(404).json({ error: 'not_found' });
+      // Simple average update (in production, track per-user ratings)
+      const newCount = (ver.ratingCount || 0) + 1;
+      const newRating = Math.round((((ver.rating || 0) * (ver.ratingCount || 0)) + rating) / newCount * 100) / 100;
+      await versions.updateOne({ _id: ver._id }, { $set: { rating: newRating, ratingCount: newCount } });
+      res.json({ rating: newRating, ratingCount: newCount });
+    } catch (e) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+  });
+
+  // ========== SETLISTS ==========
   app.get('/api/setlists', authMiddleware, async (req, res) => {
     const list = await setlists.find({ owner: req.user.sub }).toArray();
     res.json(list);
@@ -206,7 +296,7 @@ async function start() {
     res.json({ id: result.insertedId });
   });
 
-  // practice sessions storage
+  // ========== SESSIONS ==========
   app.post('/api/sessions', authMiddleware, async (req, res) => {
     const payload = req.body;
     payload.owner = req.user.sub;
@@ -215,42 +305,31 @@ async function start() {
     res.json({ id: result.insertedId });
   });
 
-  // sessions endpoints
   app.get('/api/sessions', authMiddleware, async (req, res) => {
     const list = await sessions.find({ owner: req.user.sub }).toArray();
     res.json(list);
   });
 
-  // public listing of recent active sessions (read-only)
   app.get('/api/sessions/active', async (req, res) => {
     const list = await sessions.find({}).sort({ updatedAt: -1 }).limit(50).toArray();
     res.json(list);
   });
 
-  // Start HTTP + WebSocket server
+  // ========== HTTP + WebSocket server ==========
   const server = http.createServer(app);
   const wss = new WebSocket.Server({ server });
 
-  // expose current user
-  app.get('/api/me', authMiddleware, (req, res) => {
-    res.json({ id: req.user.sub, email: req.user.email });
-  });
-
-  // Authenticate WebSocket connections using ?token=<jwt>
   wss.on('connection', (ws, req) => {
     let userId = null;
     try {
       const url = new URL(req.url, `http://${req.headers.host}`);
       const token = url.searchParams.get('token');
-      if (!token) {
-        ws.close(4001, 'missing_token');
-        return;
-      }
+      if (!token) { ws.close(4001, 'missing_token'); return; }
       const data = jwt.verify(token, JWT_SECRET);
       userId = data.sub;
       ws.user = data;
     } catch (e) {
-      try { ws.close(4002, 'invalid_token') } catch (err) {}
+      try { ws.close(4002, 'invalid_token'); } catch (err) {}
       return;
     }
 
@@ -259,7 +338,6 @@ async function start() {
         const data = JSON.parse(msg.toString());
         if (data && data.type === 'session:update') {
           const payload = data.payload || {};
-          // persist session minimal state when sessionId present
           if (payload.sessionId) {
             try {
               await sessions.updateOne(
@@ -271,8 +349,6 @@ async function start() {
               console.warn('session persist error', e.message);
             }
           }
-
-          // broadcast to other clients
           wss.clients.forEach((c) => {
             if (c !== ws && c.readyState === WebSocket.OPEN) c.send(JSON.stringify(data));
           });
@@ -283,7 +359,7 @@ async function start() {
     });
   });
 
-  server.listen(PORT, () => console.log(`Server listening ${PORT}`));
+  server.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 }
 
 start().catch((err) => {

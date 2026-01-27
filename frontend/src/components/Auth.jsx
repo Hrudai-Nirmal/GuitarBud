@@ -17,15 +17,14 @@ export default function Auth({ onAuth }) {
     setError(null)
     if (mode === 'login') {
       const url = '/auth/login'
-      try {
-        const res = await fetch((import.meta.env.VITE_API_BASE || '') + url, {
+      try {        const res = await fetch((import.meta.env.VITE_API_BASE || '').replace(/\/+$/, '') + url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'failed')
-        if (mode === 'login') onAuth(data.token)
+        if (mode === 'login') onAuth(data.token, data.role || 'student')
       } catch (e) {
         setError(e.message)
       }
@@ -45,7 +44,7 @@ export default function Auth({ onAuth }) {
         })
       }
 
-      const res = await fetch((import.meta.env.VITE_API_BASE || '') + url, {
+      const res = await fetch((import.meta.env.VITE_API_BASE || '').replace(/\/+$/, '') + url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, role, resume: resumeData ? { name: resumeFile.name, data: resumeData } : null }),
