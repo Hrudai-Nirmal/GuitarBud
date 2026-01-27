@@ -4,13 +4,13 @@ import { getChordData } from '../utils/chordLibrary'
 // SVG chord diagram renderer using chord library
 export default function ChordDiagram({ token, size = 120 }) {
   const chordData = getChordData(token)
-    const strings = 6
+  const strings = 6
   const numFrets = 4
   const nutHeight = 6
   const width = size
-  const height = Math.round(size * 1.1)
+  const height = Math.round(size * 1.2)
   const margin = 14
-  const topMargin = 8
+  const topMargin = 16
   const stringSpacing = (width - margin * 2) / (strings - 1)
   const fretHeight = (height - topMargin - margin - nutHeight) / numFrets
 

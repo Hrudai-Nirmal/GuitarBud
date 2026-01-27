@@ -6,6 +6,7 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
+  flex: 1;
 }
 
 /* Header */
@@ -163,6 +164,7 @@
   align-items: center;
   gap: 4px;
   min-width: 80px;
+  padding-top: 8px;
 }
 
 .chordName {
