@@ -19,15 +19,49 @@ function parseTimeSignature(ts) {
 
 // Render content with chords above lyrics - DAW aligned with bar-based grid
 function renderContent(content, blocks, { timeSig, showGrid, compactMode, currentBar, currentBeat, lineRefs }) {
+  const elements = []
+  
+  // Add count-in bar (bar 0) at the start
+  elements.push(
+    <div 
+      key="count-in" 
+      ref={el => lineRefs.current[-1] = el}
+      className={`${styles.barLine} ${styles.countInBar} ${currentBar === -1 ? styles.activeBar : ''} ${compactMode ? styles.compactBar : ''}`}
+    >
+      {showGrid && (
+        compactMode ? (
+          <div className={styles.barNumber}>0</div>
+        ) : (
+          <div className={styles.beatGridWithBar}>
+            <div className={styles.barNumberSmall}>0</div>
+            <div className={styles.beatGrid}>
+              {Array.from({ length: timeSig.beats }, (_, b) => (
+                <div 
+                  key={b} 
+                  className={`${styles.beatCell} ${currentBar === -1 && b === currentBeat ? styles.activeBeat : ''}`}
+                >
+                  {b + 1}
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      )}
+      <div className={styles.barContent}>
+        <div className={styles.countInText}>Count in...</div>
+      </div>
+    </div>
+  )
+  
   // If blocks exist, render block-based content
   if (blocks && blocks.length > 0) {
     let barIndex = 0
-    return blocks.map((block, idx) => {
+    blocks.forEach((block, idx) => {
       if (block.type === 'lyrics') {
         const lines = (block.data || '').split('\n')
-        return lines.map((line, li) => {
+        lines.forEach((line, li) => {
           const thisBar = barIndex++
-          return (
+          elements.push(
             <div 
               key={`${idx}-${li}`} 
               ref={el => lineRefs.current[thisBar] = el}
@@ -37,15 +71,18 @@ function renderContent(content, blocks, { timeSig, showGrid, compactMode, curren
                 compactMode ? (
                   <div className={styles.barNumber}>{thisBar + 1}</div>
                 ) : (
-                  <div className={styles.beatGrid}>
-                    {Array.from({ length: timeSig.beats }, (_, b) => (
-                      <div 
-                        key={b} 
-                        className={styles.beatCell}
-                      >
-                        {b + 1}
-                      </div>
-                    ))}
+                  <div className={styles.beatGridWithBar}>
+                    <div className={styles.barNumberSmall}>{thisBar + 1}</div>
+                    <div className={styles.beatGrid}>
+                      {Array.from({ length: timeSig.beats }, (_, b) => (
+                        <div 
+                          key={b} 
+                          className={`${styles.beatCell} ${thisBar === currentBar && b === currentBeat ? styles.activeBeat : ''}`}
+                        >
+                          {b + 1}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )
               )}
@@ -57,7 +94,7 @@ function renderContent(content, blocks, { timeSig, showGrid, compactMode, curren
         })
       } else if (block.type === 'tabs') {
         const thisBar = barIndex++
-        return (
+        elements.push(
           <div 
             key={idx} 
             ref={el => lineRefs.current[thisBar] = el}
@@ -67,15 +104,18 @@ function renderContent(content, blocks, { timeSig, showGrid, compactMode, curren
               compactMode ? (
                 <div className={styles.barNumber}>{thisBar + 1}</div>
               ) : (
-                <div className={styles.beatGrid}>
-                  {Array.from({ length: timeSig.beats }, (_, b) => (
-                    <div 
-                      key={b} 
-                      className={styles.beatCell}
-                    >
-                      {b + 1}
-                    </div>
-                  ))}
+                <div className={styles.beatGridWithBar}>
+                  <div className={styles.barNumberSmall}>{thisBar + 1}</div>
+                  <div className={styles.beatGrid}>
+                    {Array.from({ length: timeSig.beats }, (_, b) => (
+                      <div 
+                        key={b} 
+                        className={`${styles.beatCell} ${thisBar === currentBar && b === currentBeat ? styles.activeBeat : ''}`}
+                      >
+                        {b + 1}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )
             )}
@@ -85,12 +125,12 @@ function renderContent(content, blocks, { timeSig, showGrid, compactMode, curren
           </div>
         )
       }
-      return null
     })
+    return elements
   }
 
   // Fallback: render ChordPro content with beat alignment
-  if (!content) return null
+  if (!content) return elements
   const lines = content.split('\n')
   let barIndex = 0
   
@@ -118,7 +158,7 @@ function renderContent(content, blocks, { timeSig, showGrid, compactMode, curren
       return <div key={i} className={styles.emptyLine}>&nbsp;</div>
     }    const thisBar = barIndex++
 
-    return (
+    elements.push(
       <div 
         key={i} 
         ref={el => lineRefs.current[thisBar] = el}
@@ -128,15 +168,18 @@ function renderContent(content, blocks, { timeSig, showGrid, compactMode, curren
           compactMode ? (
             <div className={styles.barNumber}>{thisBar + 1}</div>
           ) : (
-            <div className={styles.beatGrid}>
-              {Array.from({ length: timeSig.beats }, (_, b) => (
-                <div 
-                  key={b} 
-                  className={styles.beatCell}
-                >
-                  {b + 1}
-                </div>
-              ))}
+            <div className={styles.beatGridWithBar}>
+              <div className={styles.barNumberSmall}>{thisBar + 1}</div>
+              <div className={styles.beatGrid}>
+                {Array.from({ length: timeSig.beats }, (_, b) => (
+                  <div 
+                    key={b} 
+                    className={`${styles.beatCell} ${thisBar === currentBar && b === currentBeat ? styles.activeBeat : ''}`}
+                  >
+                    {b + 1}
+                  </div>
+                ))}
+              </div>
             </div>
           )
         )}
@@ -153,6 +196,8 @@ function renderContent(content, blocks, { timeSig, showGrid, compactMode, curren
       </div>
     )
   })
+  
+  return elements
 }
 
 // Render ChordPro formatted line with chord tokens
@@ -189,9 +234,9 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
   const [metronomeOn, setMetronomeOn] = useState(false)
   const [autoscroll, setAutoscroll] = useState(false)
   const [scrollSpeed, setScrollSpeed] = useState(1)
-  const [currentBar, setCurrentBar] = useState(0)
+  const [currentBar, setCurrentBar] = useState(-1) // Start at -1 for count-in bar (bar 0)
   const [currentBeat, setCurrentBeat] = useState(0)
-  const [showGrid, setShowGrid] = useState(false)
+  const [showGrid, setShowGrid] = useState(true) // Show grid by default
   const [compactMode, setCompactMode] = useState(true) // Compact: just bar numbers
   
   const contentRef = useRef(null)
@@ -210,12 +255,11 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
   useEffect(() => {
     if (version?.bpm) setBpm(version.bpm)
   }, [version])
-
   // Reset beat/bar when autoscroll starts/stops
   useEffect(() => {
     if (!autoscroll) {
       setCurrentBeat(0)
-      setCurrentBar(0)
+      setCurrentBar(-1) // Reset to count-in bar
     }
   }, [autoscroll])
 
@@ -241,9 +285,8 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
       })
     }
   }, [currentBar, autoscroll])
-
   function jumpBars(delta) {
-    setCurrentBar(b => Math.max(0, Math.min(totalBars - 1, b + delta)))
+    setCurrentBar(b => Math.max(-1, Math.min(totalBars - 1, b + delta))) // -1 is count-in bar
     setCurrentBeat(0)
   }
 
@@ -330,12 +373,13 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
               value={scrollSpeed}
               onChange={(e) => setScrollSpeed(parseFloat(e.target.value))}
             />
-          </label>
-        </div>        <div className={styles.controlGroup}>
+          </label>        </div>        <div className={styles.controlGroup}>
           <button className={styles.controlBtn} onClick={() => jumpBars(-1)}>
             ◀ Bar
           </button>
-          <span className={styles.barIndicator}>Bar {currentBar + 1} / Beat {currentBeat + 1}</span>
+          <span className={styles.barIndicator}>
+            Bar {currentBar === -1 ? '0 (count-in)' : currentBar + 1} / Beat {currentBeat + 1}
+          </span>
           <button className={styles.controlBtn} onClick={() => jumpBars(1)}>
             Bar ▶
           </button>
