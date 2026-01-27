@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import styles from './LessonViewer.module.css'
 import ChordDiagram from './ChordDiagram'
 import useMetronome from '../hooks/useMetronome'
@@ -17,7 +17,7 @@ function parseTimeSignature(ts) {
   return { beats: parseInt(parts[0]) || 4, noteValue: parseInt(parts[1]) || 4 }
 }
 
-// Render content with chords above lyrics
+// Render content with chords above lyrics - DAW aligned
 function renderContent(content, blocks) {
   // If blocks exist, render block-based content
   if (blocks && blocks.length > 0) {
@@ -25,7 +25,7 @@ function renderContent(content, blocks) {
       if (block.type === 'lyrics') {
         return (
           <div key={idx} className={styles.lyricsBlock}>
-            <pre className={styles.lyricsText}>{block.data}</pre>
+            <pre className={styles.lyricsText}>{renderChordProLine(block.data)}</pre>
           </div>
         )
       } else if (block.type === 'tabs') {
@@ -39,7 +39,7 @@ function renderContent(content, blocks) {
     })
   }
 
-  // Fallback: render ChordPro content
+  // Fallback: render ChordPro content with beat alignment
   if (!content) return null
   const lines = content.split('\n')
   return lines.map((line, i) => {
@@ -52,25 +52,48 @@ function renderContent(content, blocks) {
     }
     const textLine = line.replace(/\[([^\]]+)\]/g, '')
     
+    // Check if this is a section header (like [Verse], [Chorus], etc)
+    if (chords.length === 1 && textLine.trim() === '') {
+      const sectionKeywords = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'pre-chorus', 'interlude', 'solo', 'tab', 'riff']
+      const isSection = sectionKeywords.some(k => chords[0].chord.toLowerCase().includes(k))
+      if (isSection) {
+        return <div key={i} className={styles.lyricLine} style={{ color: '#888', fontWeight: 600, marginTop: '16px' }}>[{chords[0].chord}]</div>
+      }
+    }
+    
     if (chords.length === 0) {
       return <div key={i} className={styles.lyricLine}>{textLine || '\u00A0'}</div>
     }
 
-    // Build chord line
-    let chordLine = ''
-    let lastPos = 0
-    chords.forEach(({ chord, index }) => {
-      // Approximate position (simplified)
-      const spaces = Math.max(0, index - lastPos - chordLine.length)
-      chordLine += ' '.repeat(spaces) + chord + ' '
-      lastPos = index + chord.length + 2
-    })
-
+    // Render chords with fixed-width spans for DAW grid alignment
     return (
       <div key={i} className={styles.lyricLine}>
-        <div className={styles.chordLine}>{chordLine}</div>
+        <div className={styles.chordLine}>
+          {chords.map((c, ci) => (
+            <span key={ci} className={styles.chordToken}>{c.chord}</span>
+          ))}
+        </div>
         <div>{textLine || '\u00A0'}</div>
       </div>
+    )
+  })
+}
+
+// Render ChordPro formatted line with chord tokens
+function renderChordProLine(text) {
+  if (!text) return null
+  return text.split('\n').map((line, i) => {
+    const parts = line.split(/(\[[^\]]+\])/)
+    return (
+      <span key={i}>
+        {parts.map((part, pi) => {
+          if (part.startsWith('[') && part.endsWith(']')) {
+            return <span key={pi} className={styles.chordToken}>{part.slice(1, -1)}</span>
+          }
+          return part
+        })}
+        {'\n'}
+      </span>
     )
   })
 }
@@ -98,6 +121,14 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
 
   const timeSig = parseTimeSignature(version?.timeSignature)
   const chords = extractChords(version?.content || '')
+  
+  // Calculate number of beats to show based on content length
+  const totalBeats = useMemo(() => {
+    const content = version?.content || ''
+    // Rough estimate: ~4 beats per line
+    const lines = content.split('\n').length
+    return Math.max(32, lines * 4)
+  }, [version?.content])
 
   // Update BPM when version changes
   useEffect(() => {
@@ -254,14 +285,42 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
             </div>
           ))}
         </div>
-      )}
-
-      {/* Content */}
-      <div 
-        ref={contentRef}
-        className={`${styles.content} ${showGrid ? styles.showGrid : ''}`}
-      >
-        {renderContent(version.content, version.blocks)}
+      )}      {/* Content with DAW-style grid */}
+      <div className={styles.contentWrapper}>
+        {/* Beat header - shows beat numbers */}
+        {showGrid && (
+          <div className={styles.beatHeader}>
+            {Array.from({ length: totalBeats }, (_, i) => (
+              <div 
+                key={i} 
+                className={`${styles.beatMarker} ${(i % timeSig.beats === 0) ? styles.major : ''}`}
+              >
+                {(i % timeSig.beats === 0) ? `${Math.floor(i / timeSig.beats) + 1}` : (i % timeSig.beats) + 1}
+              </div>
+            ))}
+          </div>
+        )}
+        
+        <div ref={contentRef} className={styles.content}>
+          <div className={styles.contentInner}>
+            {/* Beat grid - vertical lines */}
+            {showGrid && (
+              <div className={styles.beatGrid}>
+                {Array.from({ length: totalBeats }, (_, i) => (
+                  <div 
+                    key={i} 
+                    className={`${styles.beatLine} ${(i % timeSig.beats === 0) ? styles.major : ''} ${i === currentBeat ? styles.current : ''}`}
+                  />
+                ))}
+              </div>
+            )}
+            
+            {/* Sheet content */}
+            <div className={styles.sheetContent}>
+              {renderContent(version.content, version.blocks)}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Other versions */}
