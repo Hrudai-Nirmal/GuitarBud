@@ -80,11 +80,11 @@ export default function ChordCharts() {
             <h3 className={styles.rootTitle}>
               {root} 
               {ENHARMONIC[root] && <span className={styles.enharmonicTitle}> / {ENHARMONIC[root]}</span>}
-            </h3>
-            <div className={styles.chordRow}>
+            </h3>            <div className={styles.chordRow}>
               {chords.map(chord => (
                 <div key={chord.name} className={styles.chordCard}>
                   <ChordDiagram token={chord.name} size={130} />
+                  <span className={styles.chordLabel}>{chord.name}</span>
                 </div>
               ))}
             </div>
