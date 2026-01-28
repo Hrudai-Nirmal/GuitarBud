@@ -362,9 +362,7 @@ async function start() {
             participants: new Map(),
             setlist: data.setlist,
             songIndex: data.songIndex || 0,
-            transpose: data.transpose || 0,
-            autoScroll: false,
-            scrollSpeed: 1,
+            scrollPosition: 0,
             createdAt: new Date(),
           };
           liveSessions.set(code, session);
@@ -394,16 +392,14 @@ async function start() {
           // Get participant list
           const participantList = Array.from(session.participants.values()).map(p => ({ email: p.email }));
           
-          // Notify joiner
+          // Notify joiner (transpose is NOT synced - each member controls their own)
           ws.send(JSON.stringify({
             type: 'session_joined',
             code,
             participants: participantList,
             setlist: session.setlist,
             songIndex: session.songIndex,
-            transpose: session.transpose,
-            autoScroll: session.autoScroll,
-            scrollSpeed: session.scrollSpeed,
+            scrollPosition: session.scrollPosition || 0,
           }));
           
           // Notify host and other participants
@@ -434,11 +430,9 @@ async function start() {
           // Only host can sync state
           if (session.hostId !== userId) return;
           
-          // Update session state
+          // Update session state (transpose is NOT synced - each member controls their own)
           if (data.songIndex !== undefined) session.songIndex = data.songIndex;
-          if (data.transpose !== undefined) session.transpose = data.transpose;
-          if (data.autoScroll !== undefined) session.autoScroll = data.autoScroll;
-          if (data.scrollSpeed !== undefined) session.scrollSpeed = data.scrollSpeed;
+          if (data.scrollPosition !== undefined) session.scrollPosition = data.scrollPosition;
           if (data.setlist) session.setlist = data.setlist;
           
           // Broadcast to all participants
@@ -446,9 +440,7 @@ async function start() {
             type: 'sync_state',
             senderId: data.senderId,
             songIndex: session.songIndex,
-            transpose: session.transpose,
-            autoScroll: session.autoScroll,
-            scrollSpeed: session.scrollSpeed,
+            scrollPosition: session.scrollPosition,
             setlist: session.setlist,
           });
           

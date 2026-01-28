@@ -72,12 +72,19 @@ export default function Performance({ token }) {
       setSessionActive(true)
       setSessionStatus('connected')
       setSessionParticipants(data.participants || [])
-      // If joining, receive current state
+      // If joining, receive current state (transpose is local, not synced)
       if (data.setlist) {
         setPerformingSetlist(data.setlist)
         setCurrentSongIndex(data.songIndex || 0)
-        setTranspose(data.transpose || 0)
         setActiveTab('perform')
+        // Sync to host's scroll position after a short delay (wait for render)
+        if (data.scrollPosition !== undefined) {
+          setTimeout(() => {
+            if (scrollRef.current) {
+              scrollRef.current.scrollTop = data.scrollPosition
+            }
+          }, 100)
+        }
       }
     } else if (data.type === 'participant_joined') {
       setSessionParticipants(data.participants || [])
@@ -86,12 +93,13 @@ export default function Performance({ token }) {
     } else if (data.type === 'sync_state') {
       // Prevent processing our own sync messages
       if (data.senderId === lastSyncRef.current) return
-      // Sync state from host
+      // Sync state from host (transpose is NOT synced - each member controls their own)
       if (data.songIndex !== undefined) setCurrentSongIndex(data.songIndex)
-      if (data.transpose !== undefined) setTranspose(data.transpose)
-      if (data.autoScroll !== undefined) setAutoScroll(data.autoScroll)
-      if (data.scrollSpeed !== undefined) setScrollSpeed(data.scrollSpeed)
       if (data.setlist) setPerformingSetlist(data.setlist)
+      // Sync scroll position directly (mirror host's actual scroll position)
+      if (data.scrollPosition !== undefined && scrollRef.current) {
+        scrollRef.current.scrollTop = data.scrollPosition
+      }
     } else if (data.type === 'session_ended') {
       setSessionActive(false)
       setSessionCode('')
@@ -138,7 +146,7 @@ export default function Performance({ token }) {
     }
   }, [sessionStatus, send])
 
-  // Sync state to participants when host changes something
+  // Sync state to participants when host changes song
   useEffect(() => {
     if (sessionActive && isHost && performingSetlist) {
       const syncId = Date.now().toString()
@@ -148,13 +156,36 @@ export default function Performance({ token }) {
         code: sessionCode,
         senderId: syncId,
         songIndex: currentSongIndex,
-        transpose,
-        autoScroll,
-        scrollSpeed,
         setlist: performingSetlist,
       })
     }
-  }, [currentSongIndex, transpose, autoScroll, scrollSpeed, performingSetlist, sessionActive, isHost, sessionCode, send])
+  }, [currentSongIndex, performingSetlist, sessionActive, isHost, sessionCode, send])
+
+  // Sync scroll position from host to participants (throttled)
+  const lastScrollSync = useRef(0)
+  useEffect(() => {
+    if (!sessionActive || !isHost || !scrollRef.current) return
+    
+    const handleScroll = () => {
+      const now = Date.now()
+      // Throttle to max 10 updates per second
+      if (now - lastScrollSync.current < 100) return
+      lastScrollSync.current = now
+      
+      const syncId = Date.now().toString()
+      lastSyncRef.current = syncId
+      send({
+        type: 'sync_state',
+        code: sessionCode,
+        senderId: syncId,
+        scrollPosition: scrollRef.current.scrollTop,
+      })
+    }
+    
+    const scrollEl = scrollRef.current
+    scrollEl.addEventListener('scroll', handleScroll)
+    return () => scrollEl.removeEventListener('scroll', handleScroll)
+  }, [sessionActive, isHost, sessionCode, send])
 
   // Load saved data on mount
   useEffect(() => {
@@ -805,7 +836,7 @@ That [C]saved a [G]wretch like [C]me
             )}
             {sessionActive && !isHost && (
               <div className={styles.followingIndicator}>
-                ↔ Synced with host
+                📍 Following host's position
               </div>
             )}
             <div className={styles.performProgress}>
