@@ -11,6 +11,11 @@ export default function useWebSocket(path, onMessage, options = {}) {
   const shouldReconnect = useRef(true)
 
   useEffect(() => {
+    // Skip connection if path is null/undefined
+    if (!path) {
+      return
+    }
+    
     const baseHttp = (import.meta.env.VITE_API_BASE || 'http://localhost:4000')
     const base = baseHttp.replace(/^http/, 'ws')
     const url = base + path + (token ? (`?token=${encodeURIComponent(token)}`) : '')

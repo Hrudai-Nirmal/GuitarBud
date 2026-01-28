@@ -319,24 +319,203 @@ async function start() {
   const server = http.createServer(app);
   const wss = new WebSocket.Server({ server });
 
+  // In-memory session storage for live performance sessions
+  const liveSessions = new Map(); // code -> { host, participants: Map<ws, {userId, name}>, setlist, songIndex, transpose, ... }
+
   wss.on('connection', (ws, req) => {
     let userId = null;
+    let userEmail = null;
     try {
       const url = new URL(req.url, `http://${req.headers.host}`);
       const token = url.searchParams.get('token');
       if (!token) { ws.close(4001, 'missing_token'); return; }
       const data = jwt.verify(token, JWT_SECRET);
       userId = data.sub;
+      userEmail = data.email;
       ws.user = data;
+      ws.userId = userId;
     } catch (e) {
       try { ws.close(4002, 'invalid_token'); } catch (err) {}
       return;
     }
 
+    // Track which session this connection is in
+    ws.sessionCode = null;
+
     ws.on('message', async (msg) => {
       try {
         const data = JSON.parse(msg.toString());
-        if (data && data.type === 'session:update') {
+        
+        // ========== Performance Session Messages ==========
+        if (data.type === 'create_session') {
+          const code = data.code;
+          if (liveSessions.has(code)) {
+            ws.send(JSON.stringify({ type: 'error', message: 'Session code already in use' }));
+            return;
+          }
+          
+          const session = {
+            code,
+            host: ws,
+            hostId: userId,
+            hostEmail: userEmail,
+            participants: new Map(),
+            setlist: data.setlist,
+            songIndex: data.songIndex || 0,
+            transpose: data.transpose || 0,
+            autoScroll: false,
+            scrollSpeed: 1,
+            createdAt: new Date(),
+          };
+          liveSessions.set(code, session);
+          ws.sessionCode = code;
+          
+          ws.send(JSON.stringify({ 
+            type: 'session_created', 
+            code,
+            participants: [] 
+          }));
+          console.log(`Session ${code} created by ${userEmail}`);
+        }
+        
+        else if (data.type === 'join_session') {
+          const code = data.code?.toUpperCase();
+          const session = liveSessions.get(code);
+          
+          if (!session) {
+            ws.send(JSON.stringify({ type: 'error', message: 'Session not found' }));
+            return;
+          }
+          
+          // Add participant
+          session.participants.set(ws, { userId, email: userEmail });
+          ws.sessionCode = code;
+          
+          // Get participant list
+          const participantList = Array.from(session.participants.values()).map(p => ({ email: p.email }));
+          
+          // Notify joiner
+          ws.send(JSON.stringify({
+            type: 'session_joined',
+            code,
+            participants: participantList,
+            setlist: session.setlist,
+            songIndex: session.songIndex,
+            transpose: session.transpose,
+            autoScroll: session.autoScroll,
+            scrollSpeed: session.scrollSpeed,
+          }));
+          
+          // Notify host and other participants
+          const joinNotification = JSON.stringify({
+            type: 'participant_joined',
+            email: userEmail,
+            participants: participantList,
+          });
+          
+          if (session.host.readyState === WebSocket.OPEN) {
+            session.host.send(joinNotification);
+          }
+          session.participants.forEach((p, clientWs) => {
+            if (clientWs !== ws && clientWs.readyState === WebSocket.OPEN) {
+              clientWs.send(joinNotification);
+            }
+          });
+          
+          console.log(`${userEmail} joined session ${code}`);
+        }
+        
+        else if (data.type === 'sync_state') {
+          const code = data.code;
+          const session = liveSessions.get(code);
+          
+          if (!session) return;
+          
+          // Only host can sync state
+          if (session.hostId !== userId) return;
+          
+          // Update session state
+          if (data.songIndex !== undefined) session.songIndex = data.songIndex;
+          if (data.transpose !== undefined) session.transpose = data.transpose;
+          if (data.autoScroll !== undefined) session.autoScroll = data.autoScroll;
+          if (data.scrollSpeed !== undefined) session.scrollSpeed = data.scrollSpeed;
+          if (data.setlist) session.setlist = data.setlist;
+          
+          // Broadcast to all participants
+          const syncMsg = JSON.stringify({
+            type: 'sync_state',
+            senderId: data.senderId,
+            songIndex: session.songIndex,
+            transpose: session.transpose,
+            autoScroll: session.autoScroll,
+            scrollSpeed: session.scrollSpeed,
+            setlist: session.setlist,
+          });
+          
+          session.participants.forEach((p, clientWs) => {
+            if (clientWs.readyState === WebSocket.OPEN) {
+              clientWs.send(syncMsg);
+            }
+          });
+        }
+        
+        else if (data.type === 'leave_session') {
+          const code = data.code;
+          const session = liveSessions.get(code);
+          
+          if (!session) return;
+          
+          // Remove from participants
+          session.participants.delete(ws);
+          ws.sessionCode = null;
+          
+          // Notify others
+          const participantList = Array.from(session.participants.values()).map(p => ({ email: p.email }));
+          const leaveMsg = JSON.stringify({
+            type: 'participant_left',
+            email: userEmail,
+            participants: participantList,
+          });
+          
+          if (session.host.readyState === WebSocket.OPEN) {
+            session.host.send(leaveMsg);
+          }
+          session.participants.forEach((p, clientWs) => {
+            if (clientWs.readyState === WebSocket.OPEN) {
+              clientWs.send(leaveMsg);
+            }
+          });
+          
+          console.log(`${userEmail} left session ${code}`);
+        }
+        
+        else if (data.type === 'end_session') {
+          const code = data.code;
+          const session = liveSessions.get(code);
+          
+          if (!session) return;
+          
+          // Only host can end session
+          if (session.hostId !== userId) return;
+          
+          // Notify all participants
+          const endMsg = JSON.stringify({ type: 'session_ended' });
+          session.participants.forEach((p, clientWs) => {
+            if (clientWs.readyState === WebSocket.OPEN) {
+              clientWs.send(endMsg);
+              clientWs.sessionCode = null;
+            }
+          });
+          
+          // Remove session
+          liveSessions.delete(code);
+          ws.sessionCode = null;
+          
+          console.log(`Session ${code} ended by host`);
+        }
+        
+        // ========== Legacy session:update handling ==========
+        else if (data.type === 'session:update') {
           const payload = data.payload || {};
           if (payload.sessionId) {
             try {
@@ -355,6 +534,45 @@ async function start() {
         }
       } catch (e) {
         console.warn('invalid ws message', e.message);
+      }
+    });
+
+    // Handle disconnection
+    ws.on('close', () => {
+      if (ws.sessionCode) {
+        const session = liveSessions.get(ws.sessionCode);
+        if (session) {
+          if (session.hostId === userId) {
+            // Host disconnected - end session
+            const endMsg = JSON.stringify({ type: 'session_ended' });
+            session.participants.forEach((p, clientWs) => {
+              if (clientWs.readyState === WebSocket.OPEN) {
+                clientWs.send(endMsg);
+                clientWs.sessionCode = null;
+              }
+            });
+            liveSessions.delete(ws.sessionCode);
+            console.log(`Session ${ws.sessionCode} ended (host disconnected)`);
+          } else {
+            // Participant disconnected
+            session.participants.delete(ws);
+            const participantList = Array.from(session.participants.values()).map(p => ({ email: p.email }));
+            const leaveMsg = JSON.stringify({
+              type: 'participant_left',
+              email: userEmail,
+              participants: participantList,
+            });
+            if (session.host.readyState === WebSocket.OPEN) {
+              session.host.send(leaveMsg);
+            }
+            session.participants.forEach((p, clientWs) => {
+              if (clientWs.readyState === WebSocket.OPEN) {
+                clientWs.send(leaveMsg);
+              }
+            });
+            console.log(`${userEmail} disconnected from session ${ws.sessionCode}`);
+          }
+        }
       }
     });
   });

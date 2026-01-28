@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard'
 import Practice from './components/Practice'
 import Tuner from './components/Tuner'
 import ChordCharts from './components/ChordCharts'
+import Performance from './components/Performance'
 import { apiFetch } from './api'
 import { save, load } from './utils/storage'
 
@@ -95,13 +96,7 @@ function App() {
       )}
 
       {view === 'performance' && (
-        <div className={styles.placeholder}>
-          <div className={styles.placeholderContent}>
-            <span className={styles.placeholderIcon}>🎤</span>
-            <h2>Performance Mode</h2>
-            <p>Song Editor, Setlist Editor, Sessions — Coming soon...</p>
-          </div>
-        </div>
+        <Performance token={token} />
       )}
 
       {view === 'tuner' && (

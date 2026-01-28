@@ -1,0 +1,1178 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 60px);
+  background: linear-gradient(180deg, #0b0b0f 0%, #080808 100%);
+}
+
+/* Tab Navigation */
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 24px;
+  background: rgba(0,0,0,0.3);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background: rgba(255,255,255,0.05);
+  color: #ccc;
+}
+
+.activeTab {
+  background: rgba(100,108,255,0.15);
+  border-color: rgba(100,108,255,0.3);
+  color: #fff;
+}
+
+.tabIcon {
+  font-size: 1.2rem;
+}
+
+.tabLabel {
+  font-weight: 500;
+}
+
+.content {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Empty States */
+.emptyState, .editorEmpty, .performEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: #888;
+  padding: 24px;
+}
+
+.emptyIcon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+}
+
+.emptyState h2, .editorEmpty h2, .performEmpty h2 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 1.5rem;
+}
+
+.emptyState p, .editorEmpty p, .performEmpty p {
+  margin: 0 0 24px;
+  color: #666;
+}
+
+.emptyText {
+  color: #666;
+  font-size: 0.9rem;
+  padding: 16px;
+  text-align: center;
+}
+
+/* Buttons */
+.primaryBtn {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.primaryBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(99,102,241,0.4);
+}
+
+.primaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.secondaryBtn {
+  padding: 10px 20px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  color: #ccc;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondaryBtn:hover {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}
+
+.addBtn {
+  padding: 6px 12px;
+  background: rgba(34,197,94,0.2);
+  border: 1px solid rgba(34,197,94,0.3);
+  border-radius: 6px;
+  color: #4ade80;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addBtn:hover {
+  background: rgba(34,197,94,0.3);
+}
+
+.deleteBtn {
+  padding: 8px 12px;
+  background: rgba(239,68,68,0.2);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 6px;
+  color: #f87171;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deleteBtn:hover {
+  background: rgba(239,68,68,0.3);
+}
+
+.performBtn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #ec4899, #db2777);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.performBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(236,72,153,0.4);
+}
+
+.performBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ========== SETLISTS TAB ========== */
+.setlistsContainer {
+  display: flex;
+  height: 100%;
+}
+
+.setlistsSidebar {
+  width: 280px;
+  background: rgba(0,0,0,0.2);
+  border-right: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.sidebarHeader h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #fff;
+}
+
+.setlistList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.setlistItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.setlistItem:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.setlistItem.active {
+  background: rgba(100,108,255,0.15);
+  border-color: rgba(100,108,255,0.3);
+}
+
+.setlistName {
+  color: #fff;
+  font-weight: 500;
+}
+
+.songCount {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.setlistMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.setlistHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.setlistTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #fff;
+  padding: 4px 0;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.setlistTitle:focus {
+  border-bottom-color: #6366f1;
+}
+
+.setlistActions {
+  display: flex;
+  gap: 12px;
+}
+
+.setlistContent {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.setlistSongs, .songLibrary {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.setlistSongs h4, .songLibrary h4 {
+  margin: 0 0 16px;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.libraryHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.libraryHeader h4 {
+  margin: 0;
+}
+
+.songOrderList, .librarySongList {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.orderedSong, .librarySong {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.songNumber {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(100,108,255,0.2);
+  border-radius: 50%;
+  color: #a5b4fc;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.songInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.songTitle {
+  color: #fff;
+  font-weight: 500;
+}
+
+.songArtist {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.songActions {
+  display: flex;
+  gap: 4px;
+}
+
+.songActions button {
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  border-radius: 4px;
+  color: #888;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.songActions button:hover {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+.songActions button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ========== EDITOR TAB ========== */
+.editorContainer {
+  display: flex;
+  height: 100%;
+}
+
+.editorSidebar {
+  width: 280px;
+  background: rgba(0,0,0,0.2);
+  border-right: 1px solid rgba(255,255,255,0.06);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.editorSidebar h3 {
+  margin: 0 0 8px;
+  color: #fff;
+}
+
+.editorSidebar label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.editorSidebar input,
+.editorSidebar select {
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.editorSidebar input:focus,
+.editorSidebar select:focus {
+  border-color: #6366f1;
+}
+
+.editorActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.chordProHelp {
+  margin-top: auto;
+  padding: 16px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+}
+
+.chordProHelp h4 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.chordProHelp p {
+  margin: 4px 0;
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.chordProHelp code {
+  background: rgba(100,108,255,0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #a5b4fc;
+}
+
+.editorMain {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.editorPane, .previewPane {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.editorPane h4, .previewPane h4 {
+  margin: 0 0 12px;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.contentEditor {
+  flex: 1;
+  padding: 16px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+}
+
+.contentEditor:focus {
+  border-color: #6366f1;
+}
+
+.previewChords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.miniChord {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.miniChord span {
+  color: #6ff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.previewContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: #ccc;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.recentSongs {
+  margin-top: 24px;
+}
+
+.recentSongs h4 {
+  color: #888;
+  margin-bottom: 12px;
+}
+
+.recentSongBtn {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  margin-bottom: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.recentSongBtn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(100,108,255,0.3);
+}
+
+/* ========== PERFORM TAB ========== */
+.performContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #000;
+}
+
+.performHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: rgba(0,0,0,0.8);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.exitBtn {
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  border-radius: 6px;
+  color: #888;
+  cursor: pointer;
+}
+
+.exitBtn:hover {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+.performTitle {
+  text-align: center;
+}
+
+.performTitle h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #fff;
+}
+
+.performArtist {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.performProgress {
+  color: #888;
+  font-size: 0.9rem;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 20px;
+}
+
+.performControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 12px 24px;
+  background: rgba(0,0,0,0.6);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-wrap: wrap;
+}
+
+.controlGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.controlGroup label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.controlGroup button {
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  border-radius: 6px;
+  color: #ccc;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.controlGroup button:hover {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+.controlGroup button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.activeBtn {
+  background: rgba(100,108,255,0.3) !important;
+  color: #fff !important;
+}
+
+.transposeValue {
+  display: inline-block;
+  width: 40px;
+  text-align: center;
+  color: #6ff;
+  font-weight: 600;
+}
+
+.performChords {
+  display: flex;
+  gap: 16px;
+  padding: 16px 24px;
+  background: rgba(0,0,0,0.4);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.performChord {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.performChord span {
+  color: #6ff;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.performContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 48px;
+  background: #000;
+}
+
+.performLyrics {
+  font-family: 'Georgia', serif;
+  line-height: 2;
+  color: #fff;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.sectionHeader {
+  display: block;
+  color: #ec4899;
+  font-weight: 700;
+  font-size: 1.1em;
+  margin-top: 1em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.chordInline {
+  color: #6ff;
+  font-weight: 700;
+  margin: 0 2px;
+}
+
+.performFooter {
+  padding: 16px 24px;
+  background: rgba(0,0,0,0.8);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  justify-content: center;
+}
+
+.setlistPreview {
+  display: flex;
+  gap: 8px;
+}
+
+.setlistDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.setlistDot:hover {
+  background: rgba(255,255,255,0.4);
+}
+
+.currentDot {
+  background: #6366f1;
+  box-shadow: 0 0 10px rgba(99,102,241,0.5);
+}
+
+.doneDot {
+  background: rgba(34,197,94,0.5);
+}
+
+/* Sessions Tab */
+.sessionsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 32px;
+  max-width: 1000px;
+  margin: 0 auto;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.sessionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+.sessionCard {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.sessionCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.sessionCardHeader h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.3rem;
+}
+
+.sessionIcon {
+  font-size: 2rem;
+}
+
+.sessionDesc {
+  color: #888;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.sessionCard h4 {
+  color: #ccc;
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+}
+
+.setlistPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.setlistPickerItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(100,108,255,0.1);
+  border: 1px solid rgba(100,108,255,0.2);
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.setlistPickerItem:hover:not(:disabled) {
+  background: rgba(100,108,255,0.2);
+  transform: translateX(4px);
+}
+
+.setlistPickerItem:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.setlistPickerName {
+  font-weight: 500;
+}
+
+.setlistPickerCount {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.activeSession {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sessionCodeDisplay {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.3);
+  border-radius: 12px;
+}
+
+.codeLabel {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.codeValue {
+  font-family: monospace;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #4ade80;
+  letter-spacing: 4px;
+}
+
+.copyBtn {
+  margin-left: auto;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  color: #ccc;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copyBtn:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+.participants {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.participantLabel {
+  color: #888;
+  font-size: 0.95rem;
+}
+
+.endBtn {
+  padding: 12px 20px;
+  background: rgba(239,68,68,0.2);
+  border: 1px solid rgba(239,68,68,0.4);
+  border-radius: 8px;
+  color: #f87171;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.endBtn:hover {
+  background: rgba(239,68,68,0.3);
+}
+
+.leaveBtn {
+  padding: 12px 20px;
+  background: rgba(251,191,36,0.2);
+  border: 1px solid rgba(251,191,36,0.4);
+  border-radius: 8px;
+  color: #fbbf24;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.leaveBtn:hover {
+  background: rgba(251,191,36,0.3);
+}
+
+.joinForm {
+  display: flex;
+  gap: 12px;
+}
+
+.codeInput {
+  flex: 1;
+  padding: 14px 16px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1.2rem;
+  font-family: monospace;
+  letter-spacing: 4px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.codeInput::placeholder {
+  letter-spacing: normal;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.codeInput:focus {
+  outline: none;
+  border-color: rgba(100,108,255,0.5);
+}
+
+.joinBtn {
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.joinBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(99,102,241,0.4);
+}
+
+.joinBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.sessionError {
+  padding: 12px 16px;
+  background: rgba(239,68,68,0.15);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 8px;
+  color: #f87171;
+  font-size: 0.9rem;
+  margin-top: 12px;
+}
+
+.sessionInfo {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.sessionInfo h4 {
+  margin: 0 0 20px;
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.infoItem {
+  display: flex;
+  gap: 12px;
+}
+
+.infoIcon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.infoItem strong {
+  display: block;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.infoItem p {
+  margin: 0;
+  color: #888;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Session Badge in Performance Mode */
+.performMeta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sessionBadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(34,197,94,0.15);
+  border: 1px solid rgba(34,197,94,0.3);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: #4ade80;
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  background: #4ade80;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.participantCount {
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid rgba(255,255,255,0.2);
+}
+
+.followingIndicator {
+  padding: 6px 12px;
+  background: rgba(251,191,36,0.15);
+  border: 1px solid rgba(251,191,36,0.3);
+  border-radius: 16px;
+  font-size: 0.8rem;
+  color: #fbbf24;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .setlistContent {
+    grid-template-columns: 1fr;
+  }
+  
+  .editorMain {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .tabs {
+    padding: 8px 12px;
+    overflow-x: auto;
+  }
+  
+  .tab {
+    padding: 8px 12px;
+  }
+  
+  .tabLabel {
+    display: none;
+  }
+  
+  .setlistsContainer {
+    flex-direction: column;
+  }
+  
+  .setlistsSidebar {
+    width: 100%;
+    max-height: 200px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  
+  .editorContainer {
+    flex-direction: column;
+  }
+  
+  .editorSidebar {
+    width: 100%;
+    max-height: 300px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  
+  .performControls {
+    gap: 12px;
+    padding: 8px 12px;
+  }
+  
+  .performContent {
+    padding: 16px;
+  }
+  
+  .sessionsContainer {
+    padding: 16px;
+  }
+  
+  .sessionsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .joinForm {
+    flex-direction: column;
+  }
+  
+  .codeInput {
+    text-align: center;
+  }
+  
+  .performMeta {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
