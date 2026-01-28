@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard'
 import Practice from './components/Practice'
 import Tuner from './components/Tuner'
 import ChordCharts from './components/ChordCharts'
+import ScaleCharts from './components/ScaleCharts'
 import Performance from './components/Performance'
 import { apiFetch } from './api'
 import { save, load } from './utils/storage'
@@ -105,6 +106,10 @@ function App() {
 
       {view === 'chords' && (
         <ChordCharts />
+      )}
+
+      {view === 'scales' && (
+        <ScaleCharts />
       )}
 
       {view === 'mylessons' && (

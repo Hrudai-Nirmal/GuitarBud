@@ -3,10 +3,11 @@ import styles from './Dashboard.module.css'
 
 const TILES = [
   { id: 'practice', label: 'Practice', icon: '🎵', desc: 'Browse and learn songs', size: 'large', gradient: 'purple' },
-  { id: 'tuner', label: 'Tuner', icon: '🎚️', desc: 'Tune your guitar', size: 'medium', gradient: 'blue' },
+  { id: 'performance', label: 'Performance', icon: '🎤', desc: 'Sessions & Setlists', size: 'medium', gradient: 'pink' },
   { id: 'chords', label: 'Chord Charts', icon: '🎸', desc: 'Reference diagrams', size: 'medium', gradient: 'teal' },
+  { id: 'scales', label: 'Scale Charts', icon: '🎼', desc: 'Scale patterns', size: 'small', gradient: 'indigo' },
+  { id: 'tuner', label: 'Tuner', icon: '🎚️', desc: 'Tune your guitar', size: 'small', gradient: 'blue' },
   { id: 'downloads', label: 'Downloaded', icon: '⬇️', desc: 'Offline lessons', size: 'small', gradient: 'orange' },
-  { id: 'performance', label: 'Performance', icon: '🎤', desc: 'Editor & Setlists', size: 'small', gradient: 'pink' },
   { id: 'mylessons', label: 'My Lessons', icon: '📚', desc: 'Purchased content', size: 'small', gradient: 'green' },
 ]
 

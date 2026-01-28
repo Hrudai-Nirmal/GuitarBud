@@ -168,8 +168,8 @@ export default function Performance({ token }) {
     
     const handleScroll = () => {
       const now = Date.now()
-      // Throttle to max 10 updates per second
-      if (now - lastScrollSync.current < 100) return
+      // Throttle to max ~66 updates per second for smooth sync
+      if (now - lastScrollSync.current < 15) return
       lastScrollSync.current = now
       
       const syncId = Date.now().toString()

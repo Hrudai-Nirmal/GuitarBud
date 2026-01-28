@@ -1,0 +1,260 @@
+.container {
+  min-height: 100vh;
+  padding: 24px;
+  background: linear-gradient(180deg, #0b0b0f 0%, #080808 100%);
+  overflow-y: auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 8px;
+}
+
+.subtitle {
+  color: #888;
+  margin: 0;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto 32px;
+  padding: 24px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+}
+
+.controlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.controlGroup label {
+  font-size: 0.9rem;
+  color: #888;
+  font-weight: 500;
+}
+
+.rootPicker, .categoryPicker, .scalePicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rootBtn, .categoryBtn, .scaleBtn {
+  padding: 8px 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #aaa;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rootBtn:hover, .categoryBtn:hover, .scaleBtn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+.rootBtn.active {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  border-color: #f97316;
+  color: #fff;
+}
+
+.categoryBtn.active {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border-color: #6366f1;
+  color: #fff;
+}
+
+.scaleBtn.active {
+  background: rgba(99,102,241,0.2);
+  border-color: rgba(99,102,241,0.5);
+  color: #fff;
+}
+
+/* Scale Info */
+.scaleInfo {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  padding: 20px 24px;
+  background: rgba(99,102,241,0.1);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 12px;
+}
+
+.scaleName {
+  font-size: 1.5rem;
+  color: #fff;
+  margin: 0 0 12px;
+}
+
+.intervals {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.intervalLabel {
+  color: #888;
+  font-size: 0.9rem;
+  margin-right: 8px;
+}
+
+.interval {
+  padding: 4px 10px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-family: monospace;
+}
+
+/* Positions Grid */
+.positionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+  max-width: 1400px;
+  margin: 0 auto 40px;
+  padding: 0 24px;
+}
+
+.positionCard {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s;
+}
+
+.positionCard:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(99,102,241,0.3);
+  transform: translateY(-2px);
+}
+
+.positionName {
+  font-size: 1rem;
+  color: #fff;
+  margin: 0;
+}
+
+.positionInfo {
+  display: flex;
+  gap: 16px;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+/* Diagram Styles */
+.diagramTitle {
+  fill: #888;
+  font-size: 11px;
+}
+
+.fretNumber {
+  fill: #666;
+  font-size: 10px;
+}
+
+.stringName {
+  fill: #666;
+  font-size: 10px;
+}
+
+.noteText {
+  fill: #fff;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+/* Quick Reference */
+.quickRef {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.quickRef h3 {
+  color: #fff;
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+}
+
+.quickRefGrid {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 16px;
+}
+
+.refItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.refDot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.tip {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .controls {
+    padding: 16px;
+  }
+  
+  .rootBtn, .categoryBtn, .scaleBtn {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+  
+  .positionsGrid {
+    grid-template-columns: 1fr;
+    padding: 0;
+  }
+  
+  .quickRefGrid {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+}
