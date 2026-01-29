@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import styles from './Tuner.module.css'
+import { MicrophoneIcon, StopIcon, LightbulbIcon } from './Icons'
 
 // Standard guitar tuning frequencies (Hz)
 const STANDARD_TUNING = [
@@ -215,8 +216,8 @@ export default function Tuner() {
     const cents = Math.abs(noteInfo.cents)
     if (cents <= 3) return { text: 'In Tune!', color: '#4ade80' }
     if (cents <= 10) return { text: 'Almost there', color: '#facc15' }
-    if (noteInfo.cents < 0) return { text: 'Tune Up ↑', color: '#f87171' }
-    return { text: 'Tune Down ↓', color: '#f87171' }
+    if (noteInfo.cents < 0) return { text: 'Tune Up', color: '#f87171' }
+    return { text: 'Tune Down', color: '#f87171' }
   }
   
   const status = getTuningStatus()
@@ -300,17 +301,15 @@ export default function Tuner() {
               style={{ width: `${volume * 100}%` }}
             />
           </div>
-        </div>
-
-        {/* Controls */}
+        </div>        {/* Controls */}
         <div className={styles.controls}>
           {!isListening ? (
             <button className={styles.startBtn} onClick={startListening}>
-              🎤 Start Tuning
+              <MicrophoneIcon size={16} /> Start Tuning
             </button>
           ) : (
             <button className={styles.stopBtn} onClick={stopListening}>
-              ⏹ Stop
+              <StopIcon size={16} /> Stop
             </button>
           )}
         </div>
@@ -327,7 +326,7 @@ export default function Tuner() {
             <li>Green = perfect, Yellow = close, Red = needs adjustment</li>
           </ol>
           <p className={styles.tip}>
-            💡 Tip: Tune in a quiet environment for best results
+            <LightbulbIcon size={16} /> Tip: Tune in a quiet environment for best results
           </p>
         </div>
       </div>

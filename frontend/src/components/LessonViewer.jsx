@@ -3,6 +3,7 @@ import styles from './LessonViewer.module.css'
 import ChordDiagram from './ChordDiagram'
 import useMetronome from '../hooks/useMetronome'
 import { apiFetch } from '../api'
+import { PlayIcon, PauseIcon, ArrowLeftIcon, ArrowRightIcon } from './Icons'
 
 // Extract chords from content (ChordPro format [Chord])
 function extractChords(content) {
@@ -355,18 +356,17 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
             >
               {compactMode ? 'Beats' : 'Compact'}
             </button>
-          )}
-          <button 
+          )}          <button 
             className={`${styles.controlBtn} ${metronomeOn ? styles.active : ''}`}
             onClick={() => setMetronomeOn(!metronomeOn)}
           >
-            Metronome {metronomeOn ? '⏸' : '▶'}
+            Metronome {metronomeOn ? <PauseIcon size={14} /> : <PlayIcon size={14} />}
           </button>
           <button 
             className={`${styles.controlBtn} ${autoscroll ? styles.active : ''}`}
             onClick={() => setAutoscroll(!autoscroll)}
           >
-            Autoscroll {autoscroll ? '⏸' : '▶'}
+            Autoscroll {autoscroll ? <PauseIcon size={14} /> : <PlayIcon size={14} />}
           </button>
           <label className={styles.speedLabel}>
             Speed:
@@ -378,13 +378,13 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
             />
           </label>        </div>        <div className={styles.controlGroup}>
           <button className={styles.controlBtn} onClick={() => jumpBars(-1)}>
-            ◀ Bar
+            <ArrowLeftIcon size={14} /> Bar
           </button>
           <span className={styles.barIndicator}>
             Bar {currentBar === -1 ? '0 (count-in)' : currentBar + 1} / Beat {currentBeat + 1}
           </span>
           <button className={styles.controlBtn} onClick={() => jumpBars(1)}>
-            Bar ▶
+            Bar <ArrowRightIcon size={14} />
           </button>
         </div>
       </div>

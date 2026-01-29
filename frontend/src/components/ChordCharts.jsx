@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import styles from './ChordCharts.module.css'
 import ChordDiagram from './ChordDiagram'
 import { getChordsByRoot, getChordsForRoot } from '../utils/chordLibrary'
+import { CloseIcon, CircleFilledIcon, CircleOutlineIcon, BarIcon } from './Icons'
 
 const ROOTS = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']
 const ENHARMONIC = { 'A#': 'Bb', 'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab' }
@@ -61,13 +62,12 @@ export default function ChordCharts() {
             if (e.target.value) setSelectedRoot(null)
           }}
           className={styles.searchInput}
-        />
-        {searchQuery && (
+        />        {searchQuery && (
           <button 
             className={styles.clearBtn}
             onClick={() => setSearchQuery('')}
           >
-            ✕
+            <CloseIcon size={14} />
           </button>
         )}
       </div>
@@ -127,19 +127,19 @@ export default function ChordCharts() {
         <h4>Reading Chord Diagrams:</h4>
         <div className={styles.legendItems}>
           <div className={styles.legendItem}>
-            <span className={styles.legendSymbol}>●</span>
+            <span className={styles.legendSymbol}><CircleFilledIcon size={16} /></span>
             <span>Finger placement (number = which finger)</span>
           </div>
           <div className={styles.legendItem}>
-            <span className={styles.legendSymbol}>○</span>
+            <span className={styles.legendSymbol}><CircleOutlineIcon size={16} /></span>
             <span>Open string (play without fretting)</span>
           </div>
           <div className={styles.legendItem}>
-            <span className={styles.legendSymbol}>✕</span>
+            <span className={styles.legendSymbol}><CloseIcon size={16} /></span>
             <span>Muted string (don't play)</span>
           </div>
           <div className={styles.legendItem}>
-            <span className={styles.legendSymbol}>▬</span>
+            <span className={styles.legendSymbol}><BarIcon size={16} /></span>
             <span>Barre (press multiple strings with one finger)</span>
           </div>
         </div>

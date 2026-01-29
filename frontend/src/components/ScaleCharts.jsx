@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import styles from './ScaleCharts.module.css'
 import { SCALE_PATTERNS, SCALE_CATEGORIES, getScaleInKey, getAllScaleNames } from '../utils/scaleLibrary'
+import { ScaleIcon, LightbulbIcon } from './Icons'
 
 const ROOTS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 const STRING_NAMES = ['E', 'A', 'D', 'G', 'B', 'e']
@@ -174,7 +175,7 @@ export default function ScaleCharts() {
     <div className={styles.container}>
       {/* Header */}
       <div className={styles.header}>
-        <h1 className={styles.title}>🎼 Scale Charts</h1>
+        <h1 className={styles.title}><ScaleIcon size={28} /> Scale Charts</h1>
         <p className={styles.subtitle}>Learn scale patterns across the fretboard</p>
       </div>
 
@@ -279,9 +280,8 @@ export default function ScaleCharts() {
             <span className={styles.refDot} style={{ background: '#6366f1' }}></span>
             <span>Scale notes</span>
           </div>
-        </div>
-        <p className={styles.tip}>
-          💡 Tip: These patterns are moveable. Shift them up or down the neck to play in different keys.
+        </div>        <p className={styles.tip}>
+          <LightbulbIcon size={16} /> Tip: These patterns are moveable. Shift them up or down the neck to play in different keys.
         </p>
       </div>
 

@@ -7,6 +7,7 @@ import Tuner from './components/Tuner'
 import ChordCharts from './components/ChordCharts'
 import ScaleCharts from './components/ScaleCharts'
 import Performance from './components/Performance'
+import { GuitarIcon, DownloadIcon, BookIcon, ArrowLeftIcon } from './components/Icons'
 import { apiFetch } from './api'
 import { save, load } from './utils/storage'
 
@@ -62,9 +63,9 @@ function App() {
       {showHeader && (
         <header className={styles.header}>
           <button className={styles.backBtn} onClick={() => setView('dashboard')}>
-            ← Back
+            <ArrowLeftIcon size={18} /> Back
           </button>
-          <h1 className={styles.logo}>🎸 GuitarBuddy</h1>
+          <h1 className={styles.logo}><GuitarIcon size={24} /> GuitarBuddy</h1>
           <div className={styles.headerRight}>
             <span className={styles.roleTag}>{userRole}</span>
             <button className={styles.logoutBtn} onClick={handleLogout}>Logout</button>
@@ -89,7 +90,7 @@ function App() {
       {view === 'downloads' && (
         <div className={styles.placeholder}>
           <div className={styles.placeholderContent}>
-            <span className={styles.placeholderIcon}>⬇️</span>
+            <span className={styles.placeholderIcon}><DownloadIcon size={48} /></span>
             <h2>Downloaded Lessons</h2>
             <p>Your offline lessons will appear here.</p>
           </div>
@@ -115,7 +116,7 @@ function App() {
       {view === 'mylessons' && (
         <div className={styles.placeholder}>
           <div className={styles.placeholderContent}>
-            <span className={styles.placeholderIcon}>📚</span>
+            <span className={styles.placeholderIcon}><BookIcon size={48} /></span>
             <h2>My Lessons</h2>
             <p>Your purchased lessons will appear here.</p>
           </div>

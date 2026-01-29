@@ -1,21 +1,31 @@
 import React from 'react'
 import styles from './Dashboard.module.css'
+import { 
+  MusicNoteIcon, 
+  MicrophoneIcon, 
+  GuitarIcon, 
+  ScaleIcon, 
+  TunerIcon, 
+  DownloadIcon, 
+  BookIcon 
+} from './Icons'
 
 const TILES = [
-  { id: 'practice', label: 'Practice', icon: '🎵', desc: 'Browse and learn songs', size: 'large', gradient: 'purple' },
-  { id: 'performance', label: 'Performance', icon: '🎤', desc: 'Sessions & Setlists', size: 'medium', gradient: 'pink' },
-  { id: 'chords', label: 'Chord Charts', icon: '🎸', desc: 'Reference diagrams', size: 'medium', gradient: 'teal' },
-  { id: 'scales', label: 'Scale Charts', icon: '🎼', desc: 'Scale patterns', size: 'small', gradient: 'indigo' },
-  { id: 'tuner', label: 'Tuner', icon: '🎚️', desc: 'Tune your guitar', size: 'small', gradient: 'blue' },
-  { id: 'downloads', label: 'Downloaded', icon: '⬇️', desc: 'Offline lessons', size: 'small', gradient: 'orange' },
-  { id: 'mylessons', label: 'My Lessons', icon: '📚', desc: 'Purchased content', size: 'small', gradient: 'green' },
+  { id: 'practice', label: 'Practice', Icon: MusicNoteIcon, desc: 'Browse and learn songs', size: 'large', gradient: 'purple' },
+  { id: 'performance', label: 'Performance', Icon: MicrophoneIcon, desc: 'Sessions & Setlists', size: 'medium', gradient: 'pink' },
+  { id: 'chords', label: 'Chord Charts', Icon: GuitarIcon, desc: 'Reference diagrams', size: 'medium', gradient: 'teal' },
+  { id: 'scales', label: 'Scale Charts', Icon: ScaleIcon, desc: 'Scale patterns', size: 'small', gradient: 'indigo' },
+  { id: 'tuner', label: 'Tuner', Icon: TunerIcon, desc: 'Tune your guitar', size: 'small', gradient: 'blue' },
+  { id: 'downloads', label: 'Downloaded', Icon: DownloadIcon, desc: 'Offline lessons', size: 'small', gradient: 'orange' },
+  { id: 'mylessons', label: 'My Lessons', Icon: BookIcon, desc: 'Purchased content', size: 'small', gradient: 'green' },
 ]
 
 export default function Dashboard({ onNavigate, userRole, onLogout }) {
   return (
     <div className={styles.container}>
       <div className={styles.heroSection}>
-        <h1 className={styles.heroTitle}>🎸 GuitarBuddy</h1>
+        <GuitarIcon size={40} className={styles.heroIcon} />
+        <h1 className={styles.heroTitle}>GuitarBuddy</h1>
         <p className={styles.heroSubtitle}>What would you like to do today?</p>
       </div>
       
@@ -27,7 +37,7 @@ export default function Dashboard({ onNavigate, userRole, onLogout }) {
             onClick={() => onNavigate(tile.id)}
           >
             <div className={styles.tileContent}>
-              <span className={styles.icon}>{tile.icon}</span>
+              <span className={styles.icon}><tile.Icon size={32} /></span>
               <div className={styles.tileText}>
                 <span className={styles.label}>{tile.label}</span>
                 <span className={styles.desc}>{tile.desc}</span>

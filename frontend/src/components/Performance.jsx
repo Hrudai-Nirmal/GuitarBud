@@ -4,13 +4,37 @@ import ChordDiagram from './ChordDiagram'
 import { transposeChordPro } from '../utils/chords'
 import { save, load } from '../utils/storage'
 import useWebSocket from '../hooks/useWebSocket'
+import {
+  ClipboardIcon,
+  EditIcon,
+  UsersIcon,
+  MicrophoneIcon,
+  TrashIcon,
+  SaveIcon,
+  CloseIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  PlayIcon,
+  PauseIcon,
+  CopyIcon,
+  MusicNoteIcon,
+  HandshakeIcon,
+  WarningIcon,
+  LocationIcon,
+  Number1Icon,
+  Number2Icon,
+  Number3Icon,
+  PlusIcon,
+} from './Icons'
 
 // Tabs for performance mode
 const TABS = [
-  { id: 'setlists', label: 'Setlists', icon: '📋' },
-  { id: 'editor', label: 'Song Editor', icon: '✏️' },
-  { id: 'sessions', label: 'Sessions', icon: '👥' },
-  { id: 'perform', label: 'Perform', icon: '🎤' },
+  { id: 'setlists', label: 'Setlists', Icon: ClipboardIcon },
+  { id: 'editor', label: 'Song Editor', Icon: EditIcon },
+  { id: 'sessions', label: 'Sessions', Icon: UsersIcon },
+  { id: 'perform', label: 'Perform', Icon: MicrophoneIcon },
 ]
 
 // Default empty setlist
@@ -438,10 +462,9 @@ export default function Performance({ token }) {
           </div>
         </div>
 
-        <div className={styles.setlistMain}>
-          {!activeSetlist ? (
+        <div className={styles.setlistMain}>          {!activeSetlist ? (
             <div className={styles.emptyState}>
-              <span className={styles.emptyIcon}>📋</span>
+              <span className={styles.emptyIcon}><ClipboardIcon size={48} /></span>
               <h2>Select or Create a Setlist</h2>
               <p>Organize your songs for gigs and practice sessions</p>
               <button className={styles.primaryBtn} onClick={createSetlist}>Create Setlist</button>
@@ -461,13 +484,13 @@ export default function Performance({ token }) {
                     onClick={() => startPerformance(activeSetlist)}
                     disabled={activeSetlist.songs.length === 0}
                   >
-                    🎤 Start Performance
+                    <MicrophoneIcon size={16} /> Start Performance
                   </button>
                   <button 
                     className={styles.deleteBtn}
                     onClick={() => deleteSetlist(activeSetlist.id)}
                   >
-                    🗑️
+                    <TrashIcon size={16} />
                   </button>
                 </div>
               </div>
@@ -487,9 +510,9 @@ export default function Performance({ token }) {
                             <span className={styles.songArtist}>{song.artist || 'Unknown'}</span>
                           </div>
                           <div className={styles.songActions}>
-                            <button onClick={() => moveSong(idx, -1)} disabled={idx === 0}>↑</button>
-                            <button onClick={() => moveSong(idx, 1)} disabled={idx === activeSetlist.songs.length - 1}>↓</button>
-                            <button onClick={() => removeSongFromSetlist(idx)}>✕</button>
+                            <button onClick={() => moveSong(idx, -1)} disabled={idx === 0}><ArrowUpIcon size={14} /></button>
+                            <button onClick={() => moveSong(idx, 1)} disabled={idx === activeSetlist.songs.length - 1}><ArrowDownIcon size={14} /></button>
+                            <button onClick={() => removeSongFromSetlist(idx)}><CloseIcon size={14} /></button>
                           </div>
                         </div>
                       ))}
@@ -511,10 +534,9 @@ export default function Performance({ token }) {
                           <div className={styles.songInfo}>
                             <span className={styles.songTitle}>{song.title}</span>
                             <span className={styles.songArtist}>{song.artist || 'Unknown'}</span>
-                          </div>
-                          <div className={styles.songActions}>
-                            <button onClick={() => { setEditingSong(song); setActiveTab('editor') }}>✏️</button>
-                            <button onClick={() => addSongToSetlist(song)}>+ Add</button>
+                          </div>                          <div className={styles.songActions}>
+                            <button onClick={() => { setEditingSong(song); setActiveTab('editor') }}><EditIcon size={14} /></button>
+                            <button onClick={() => addSongToSetlist(song)}><PlusIcon size={14} /> Add</button>
                           </div>
                         </div>
                       ))}
@@ -528,12 +550,11 @@ export default function Performance({ token }) {
       </div>
     )
   }
-
   function renderEditorTab() {
     if (!editingSong) {
       return (
         <div className={styles.editorEmpty}>
-          <span className={styles.emptyIcon}>✏️</span>
+          <span className={styles.emptyIcon}><EditIcon size={48} /></span>
           <h2>Song Editor</h2>
           <p>Create or edit songs with ChordPro format</p>
           <button className={styles.primaryBtn} onClick={createNewSong}>Create New Song</button>
@@ -598,17 +619,15 @@ export default function Performance({ token }) {
               min={40}
               max={240}
             />
-          </label>
-
-          <div className={styles.editorActions}>
+          </label>          <div className={styles.editorActions}>
             <button className={styles.primaryBtn} onClick={() => saveSong(editingSong)}>
-              💾 Save Song
+              <SaveIcon size={16} /> Save Song
             </button>
             <button className={styles.secondaryBtn} onClick={() => setEditingSong(null)}>
               Cancel
             </button>
             <button className={styles.deleteBtn} onClick={() => deleteSong(editingSong.id)}>
-              🗑️ Delete
+              <TrashIcon size={16} /> Delete
             </button>
           </div>
 
@@ -664,7 +683,7 @@ That [C]saved a [G]wretch like [C]me
           {/* Create Session */}
           <div className={styles.sessionCard}>
             <div className={styles.sessionCardHeader}>
-              <span className={styles.sessionIcon}>🎵</span>
+              <span className={styles.sessionIcon}><MusicNoteIcon size={24} /></span>
               <h3>Host a Session</h3>
             </div>
             <p className={styles.sessionDesc}>
@@ -683,12 +702,12 @@ That [C]saved a [G]wretch like [C]me
                       navigator.clipboard.writeText(sessionCode)
                     }}
                   >
-                    📋 Copy
+                    <CopyIcon size={14} /> Copy
                   </button>
                 </div>
                 <div className={styles.participants}>
                   <span className={styles.participantLabel}>
-                    👥 {sessionParticipants.length + 1} connected
+                    <UsersIcon size={14} /> {sessionParticipants.length + 1} connected
                   </span>
                 </div>
                 <button className={styles.endBtn} onClick={endSession}>
@@ -717,12 +736,10 @@ That [C]saved a [G]wretch like [C]me
                 )}
               </>
             )}
-          </div>
-
-          {/* Join Session */}
+          </div>          {/* Join Session */}
           <div className={styles.sessionCard}>
             <div className={styles.sessionCardHeader}>
-              <span className={styles.sessionIcon}>🤝</span>
+              <span className={styles.sessionIcon}><HandshakeIcon size={24} /></span>
               <h3>Join a Session</h3>
             </div>
             <p className={styles.sessionDesc}>
@@ -738,7 +755,7 @@ That [C]saved a [G]wretch like [C]me
                 </div>
                 <div className={styles.participants}>
                   <span className={styles.participantLabel}>
-                    👥 {sessionParticipants.length + 1} connected
+                    <UsersIcon size={14} /> {sessionParticipants.length + 1} connected
                   </span>
                 </div>
                 <button className={styles.leaveBtn} onClick={leaveSession}>
@@ -763,11 +780,9 @@ That [C]saved a [G]wretch like [C]me
                   {sessionStatus === 'connecting' ? 'Connecting...' : 'Join Session'}
                 </button>
               </div>
-            )}
-
-            {sessionError && (
+            )}            {sessionError && (
               <div className={styles.sessionError}>
-                ⚠️ {sessionError}
+                <WarningIcon size={16} /> {sessionError}
               </div>
             )}
           </div>
@@ -778,21 +793,21 @@ That [C]saved a [G]wretch like [C]me
           <h4>How Sessions Work</h4>
           <div className={styles.infoGrid}>
             <div className={styles.infoItem}>
-              <span className={styles.infoIcon}>1️⃣</span>
+              <span className={styles.infoIcon}><Number1Icon size={24} /></span>
               <div>
                 <strong>Host creates a session</strong>
                 <p>Select a setlist and start hosting. Share the code with your band.</p>
               </div>
             </div>
             <div className={styles.infoItem}>
-              <span className={styles.infoIcon}>2️⃣</span>
+              <span className={styles.infoIcon}><Number2Icon size={24} /></span>
               <div>
                 <strong>Others join with the code</strong>
                 <p>Band members enter the 6-character code to connect.</p>
               </div>
             </div>
             <div className={styles.infoItem}>
-              <span className={styles.infoIcon}>3️⃣</span>
+              <span className={styles.infoIcon}><Number3Icon size={24} /></span>
               <div>
                 <strong>Stay in sync</strong>
                 <p>Everyone sees the same song. Host controls navigation and transpose.</p>
@@ -808,7 +823,7 @@ That [C]saved a [G]wretch like [C]me
     if (!performingSetlist || !currentSong) {
       return (
         <div className={styles.performEmpty}>
-          <span className={styles.emptyIcon}>🎤</span>
+          <span className={styles.emptyIcon}><MicrophoneIcon size={48} /></span>
           <h2>Performance Mode</h2>
           <p>Start a performance from a setlist</p>
           <button className={styles.secondaryBtn} onClick={() => setActiveTab('setlists')}>
@@ -816,12 +831,10 @@ That [C]saved a [G]wretch like [C]me
           </button>
         </div>
       )
-    }
-
-    return (
+    }    return (
       <div className={styles.performContainer}>
         <div className={styles.performHeader}>
-          <button className={styles.exitBtn} onClick={exitPerformance}>✕ Exit</button>
+          <button className={styles.exitBtn} onClick={exitPerformance}><CloseIcon size={16} /> Exit</button>
           <div className={styles.performTitle}>
             <h1>{currentSong.title}</h1>
             <span className={styles.performArtist}>{currentSong.artist}</span>
@@ -831,12 +844,12 @@ That [C]saved a [G]wretch like [C]me
               <div className={styles.sessionBadge}>
                 <span className={styles.liveDot}></span>
                 {isHost ? 'Hosting' : 'Following'}: {sessionCode}
-                <span className={styles.participantCount}>👥 {sessionParticipants.length + 1}</span>
+                <span className={styles.participantCount}><UsersIcon size={14} /> {sessionParticipants.length + 1}</span>
               </div>
             )}
             {sessionActive && !isHost && (
               <div className={styles.followingIndicator}>
-                📍 Following host's position
+                <LocationIcon size={14} /> Following host's position
               </div>
             )}
             <div className={styles.performProgress}>
@@ -852,13 +865,13 @@ That [C]saved a [G]wretch like [C]me
               onClick={prevSong} 
               disabled={currentSongIndex === 0 || (sessionActive && !isHost)}
             >
-              ◀ Prev
+              <ArrowLeftIcon size={14} /> Prev
             </button>
             <button 
               onClick={nextSong} 
               disabled={currentSongIndex >= performingSetlist.songs.length - 1 || (sessionActive && !isHost)}
             >
-              Next ▶
+              Next <ArrowRightIcon size={14} />
             </button>
           </div>
           {/* Transpose - only host can control in session */}
@@ -884,15 +897,14 @@ That [C]saved a [G]wretch like [C]me
               <span>{fontSize}px</span>
               <button onClick={() => setFontSize(s => Math.min(36, s + 2))}>A+</button>
             </label>
-          </div>
-          {/* Auto-scroll - only host can control in session */}
+          </div>          {/* Auto-scroll - only host can control in session */}
           <div className={styles.controlGroup}>
             <button 
               className={autoScroll ? styles.activeBtn : ''}
               onClick={() => setAutoScroll(!autoScroll)}
               disabled={sessionActive && !isHost}
             >
-              {autoScroll ? '⏸ Scroll' : '▶ Scroll'}
+              {autoScroll ? <><PauseIcon size={14} /> Scroll</> : <><PlayIcon size={14} /> Scroll</>}
             </button>
             {autoScroll && (
               <input
@@ -969,7 +981,6 @@ That [C]saved a [G]wretch like [C]me
       )
     })
   }
-
   return (
     <div className={styles.container}>
       {/* Tab Navigation */}
@@ -981,7 +992,7 @@ That [C]saved a [G]wretch like [C]me
               className={`${styles.tab} ${activeTab === tab.id ? styles.activeTab : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >
-              <span className={styles.tabIcon}>{tab.icon}</span>
+              <span className={styles.tabIcon}><tab.Icon size={18} /></span>
               <span className={styles.tabLabel}>{tab.label}</span>
             </button>
           ))}
