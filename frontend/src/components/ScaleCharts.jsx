@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import styles from './ScaleCharts.module.css'
 import { SCALE_PATTERNS, SCALE_CATEGORIES, getScaleInKey, getAllScaleNames } from '../utils/scaleLibrary'
 
@@ -144,6 +144,25 @@ export default function ScaleCharts() {
   const [selectedRoot, setSelectedRoot] = useState('A')
   const [selectedScale, setSelectedScale] = useState('Minor Pentatonic')
   const [selectedCategory, setSelectedCategory] = useState('Pentatonic')
+  const [zoomedPosition, setZoomedPosition] = useState(null)
+
+  // Close zoomed scale on Escape key
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Escape') setZoomedPosition(null)
+  }, [])
+
+  useEffect(() => {
+    if (zoomedPosition) {
+      document.addEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [zoomedPosition, handleKeyDown])
 
   const scaleData = useMemo(() => {
     return getScaleInKey(selectedScale, selectedRoot)
@@ -228,7 +247,11 @@ export default function ScaleCharts() {
       {/* Scale Positions */}
       <div className={styles.positionsGrid}>
         {scaleData?.positions.map((position, index) => (
-          <div key={index} className={styles.positionCard}>
+          <div 
+            key={index} 
+            className={styles.positionCard}
+            onClick={() => setZoomedPosition({ position, scaleName: scaleData.name })}
+          >
             <h3 className={styles.positionName}>{position.name}</h3>
             <ScaleDiagram
               pattern={position.actualFrets}
@@ -261,6 +284,27 @@ export default function ScaleCharts() {
           💡 Tip: These patterns are moveable. Shift them up or down the neck to play in different keys.
         </p>
       </div>
+
+      {/* Zoomed scale modal */}
+      {zoomedPosition && (
+        <div className={styles.zoomOverlay} onClick={() => setZoomedPosition(null)}>
+          <div className={styles.zoomModal} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.zoomTitle}>{zoomedPosition.scaleName}</h2>
+            <h3 className={styles.zoomSubtitle}>{zoomedPosition.position.name}</h3>
+            <ScaleDiagram
+              pattern={zoomedPosition.position.actualFrets}
+              rootFret={zoomedPosition.position.rootFret}
+              size={450}
+              title={`Frets ${zoomedPosition.position.rootFret}-${zoomedPosition.position.rootFret + 4}`}
+            />
+            <div className={styles.zoomInfo}>
+              <span>Root on string {zoomedPosition.position.rootString}</span>
+              <span>Start at fret {zoomedPosition.position.rootFret}</span>
+            </div>
+            <p className={styles.zoomHint}>Click outside or press Esc to close</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

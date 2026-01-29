@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import styles from './ChordCharts.module.css'
 import ChordDiagram from './ChordDiagram'
 import { getChordsByRoot, getChordsForRoot } from '../utils/chordLibrary'
@@ -9,6 +9,25 @@ const ENHARMONIC = { 'A#': 'Bb', 'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab' 
 export default function ChordCharts() {
   const [selectedRoot, setSelectedRoot] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [zoomedChord, setZoomedChord] = useState(null)
+
+  // Close zoomed chord on Escape key
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Escape') setZoomedChord(null)
+  }, [])
+
+  useEffect(() => {
+    if (zoomedChord) {
+      document.addEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [zoomedChord, handleKeyDown])
   
   const chordsByRoot = getChordsByRoot()
   
@@ -82,7 +101,11 @@ export default function ChordCharts() {
               {ENHARMONIC[root] && <span className={styles.enharmonicTitle}> / {ENHARMONIC[root]}</span>}
             </h3>            <div className={styles.chordRow}>
               {chords.map(chord => (
-                <div key={chord.name} className={styles.chordCard}>
+                <div 
+                  key={chord.name} 
+                  className={styles.chordCard}
+                  onClick={() => setZoomedChord(chord.name)}
+                >
                   <ChordDiagram token={chord.name} size={130} />
                   <span className={styles.chordLabel}>{chord.name}</span>
                 </div>
@@ -99,9 +122,7 @@ export default function ChordCharts() {
             </p>
           </div>
         )}
-      </div>
-
-      {/* Quick reference */}
+      </div>      {/* Quick reference */}
       <div className={styles.legend}>
         <h4>Reading Chord Diagrams:</h4>
         <div className={styles.legendItems}>
@@ -123,6 +144,17 @@ export default function ChordCharts() {
           </div>
         </div>
       </div>
+
+      {/* Zoomed chord modal */}
+      {zoomedChord && (
+        <div className={styles.zoomOverlay} onClick={() => setZoomedChord(null)}>
+          <div className={styles.zoomModal} onClick={(e) => e.stopPropagation()}>
+            <ChordDiagram token={zoomedChord} size={300} />
+            <span className={styles.zoomLabel}>{zoomedChord}</span>
+            <p className={styles.zoomHint}>Click outside or press Esc to close</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
