@@ -16,22 +16,35 @@
   align-items: center;
 }
 
-.heroLogo {
-  height: 64px;
-  width: auto;
-  margin-bottom: 12px;
-  filter: drop-shadow(0 4px 12px rgba(139, 92, 246, 0.3));
-}
-
 .heroTitle {
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin: 0 0 8px;
-  background: linear-gradient(135deg, #fff 30%, #a5b4fc 100%);
+  font-size: 4.5rem;
+  font-weight: 900;
+  margin: 0 0 16px;
+  letter-spacing: 0.35em;
+  background: linear-gradient(
+    90deg,
+    #a78bfa 0%,
+    #818cf8 20%,
+    #60a5fa 40%,
+    #34d399 60%,
+    #818cf8 80%,
+    #a78bfa 100%
+  );
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  letter-spacing: 0.1em;
+  animation: shimmer 4s ease-in-out infinite;
+  text-shadow: 0 0 80px rgba(139, 92, 246, 0.5);
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .heroSubtitle {
@@ -292,7 +305,8 @@
   }
 
   .heroTitle {
-    font-size: 2rem;
+    font-size: 3rem;
+    letter-spacing: 0.25em;
   }
 
   .bentoGrid {
@@ -342,7 +356,8 @@
   }
 
   .heroTitle {
-    font-size: 1.75rem;
+    font-size: 2.25rem;
+    letter-spacing: 0.2em;
   }
 
   .heroSubtitle {

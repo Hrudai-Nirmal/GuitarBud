@@ -23,7 +23,6 @@ const TILES = [
 export default function Dashboard({ onNavigate, userRole, onLogout }) {
   return (
     <div className={styles.container}>      <div className={styles.heroSection}>
-        <img src="/muses.svg" alt="Muses" className={styles.heroLogo} />
         <h1 className={styles.heroTitle}>MUSES</h1>
         <p className={styles.heroSubtitle}>What would you like to do today?</p>
       </div>
