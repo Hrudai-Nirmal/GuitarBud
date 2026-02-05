@@ -11,6 +11,16 @@
 .heroSection {
   text-align: center;
   padding: 60px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.heroLogo {
+  height: 64px;
+  width: auto;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 4px 12px rgba(139, 92, 246, 0.3));
 }
 
 .heroTitle {
@@ -21,6 +31,7 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  letter-spacing: 0.1em;
 }
 
 .heroSubtitle {
