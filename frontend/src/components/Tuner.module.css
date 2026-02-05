@@ -460,6 +460,71 @@
   transition: width 0.1s;
 }
 
+/* Sensitivity control */
+.sensitivityControl {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sensitivityLabel {
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.sensitivityValue {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.sensitivitySlider {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.sensitivitySlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+  transition: transform 0.2s;
+}
+
+.sensitivitySlider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+.sensitivitySlider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+.sensitivityHint {
+  font-size: 0.75rem;
+  color: #888;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
 /* Controls */
 .controls {
   display: flex;

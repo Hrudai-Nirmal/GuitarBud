@@ -109,13 +109,13 @@ export default function Tuner() {
   const [error, setError] = useState(null)
   const [volume, setVolume] = useState(0)
   
-  // Tuning state
-  const [selectedPreset, setSelectedPreset] = useState('Standard')
+  // Tuning state  const [selectedPreset, setSelectedPreset] = useState('Standard')
   const [customNotes, setCustomNotes] = useState(['E2', 'A2', 'D3', 'G3', 'B3', 'E4'])
   const [currentTuning, setCurrentTuning] = useState(buildTuning(['E2', 'A2', 'D3', 'G3', 'B3', 'E4']))
   const [showCustomEditor, setShowCustomEditor] = useState(false)
   const [savedCustomTunings, setSavedCustomTunings] = useState({})
   const [customTuningName, setCustomTuningName] = useState('')
+  const [sensitivity, setSensitivity] = useState(3) // 1-5 scale, 3 = default
   
   const audioContextRef = useRef(null)
   const analyserRef = useRef(null)
@@ -123,6 +123,7 @@ export default function Tuner() {
   const animationRef = useRef(null)
   const bufferRef = useRef(null)
   const detectPitchRef = useRef(null)
+  const gainNodeRef = useRef(null)
 
   // Load saved custom tunings on mount
   useEffect(() => {
@@ -151,24 +152,29 @@ export default function Tuner() {
       setCurrentTuning(buildTuning(customNotes))
     }
   }, [customNotes, selectedPreset, showCustomEditor])
-
   const analyze = useCallback(() => {
     if (!analyserRef.current || !bufferRef.current || !detectPitchRef.current) return
     
     analyserRef.current.getFloatTimeDomainData(bufferRef.current)
     
-    // Calculate volume (RMS)
+    // Calculate volume (RMS) with sensitivity boost
+    // Sensitivity: 1=low (x2), 2=medium-low (x4), 3=default (x8), 4=high (x16), 5=max (x32)
+    const sensitivityMultiplier = Math.pow(2, sensitivity)
     let sum = 0
     for (let i = 0; i < bufferRef.current.length; i++) {
       sum += bufferRef.current[i] * bufferRef.current[i]
     }
     const rms = Math.sqrt(sum / bufferRef.current.length)
-    setVolume(Math.min(rms * 5, 1))
+    setVolume(Math.min(rms * sensitivityMultiplier, 1))
+    
+    // Lower threshold for pitch detection - detect even quiet signals
+    // RMS threshold: 0.001 for high sensitivity, 0.01 for low
+    const rmsThreshold = 0.02 / sensitivity
     
     // Use pitchfinder YIN algorithm
     const freq = detectPitchRef.current(bufferRef.current)
     
-    if (freq && freq > 50 && freq < 1000) {
+    if (freq && freq > 50 && freq < 1000 && rms > rmsThreshold) {
       setFrequency(freq)
       const info = frequencyToNote(freq)
       setNoteInfo(info)
@@ -180,40 +186,56 @@ export default function Tuner() {
     }
     
     animationRef.current = requestAnimationFrame(analyze)
-  }, [currentTuning])
-
+  }, [currentTuning, sensitivity])
   const startListening = useCallback(async () => {
     try {
       setError(null)
       
-      // Request microphone access
+      // Request microphone access with settings optimized for instrument tuning
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: { 
           echoCancellation: false,
           noiseSuppression: false,
-          autoGainControl: false
+          autoGainControl: false,
+          // Request high sensitivity settings
+          channelCount: 1,
+          sampleRate: 48000,
         } 
       })
       streamRef.current = stream
       
-      // Create audio context
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+      // Create audio context with higher sample rate for better detection
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+        sampleRate: 48000
+      })
       audioContextRef.current = audioContext
       
       // Create analyser with larger buffer for better low-frequency detection
       const analyser = audioContext.createAnalyser()
       analyser.fftSize = 4096
+      analyser.smoothingTimeConstant = 0.1 // Less smoothing for faster response
       analyserRef.current = analyser
+      
+      // Create gain node for signal boost based on sensitivity
+      const gainNode = audioContext.createGain()
+      // Boost signal: sensitivity 1=1.5x, 2=2x, 3=3x, 4=5x, 5=8x
+      const gainValues = [1.5, 2, 3, 5, 8]
+      gainNode.gain.value = gainValues[sensitivity - 1] || 3
+      gainNodeRef.current = gainNode
       
       // Create buffer
       bufferRef.current = new Float32Array(analyser.fftSize)
       
-      // Initialize pitchfinder YIN detector
-      detectPitchRef.current = YIN({ sampleRate: audioContext.sampleRate })
+      // Initialize pitchfinder YIN detector with threshold for guitar
+      detectPitchRef.current = YIN({ 
+        sampleRate: audioContext.sampleRate,
+        threshold: 0.1 // Lower threshold = more sensitive (default is 0.15)
+      })
       
-      // Connect microphone to analyser
+      // Connect: microphone -> gain -> analyser
       const source = audioContext.createMediaStreamSource(stream)
-      source.connect(analyser)
+      source.connect(gainNode)
+      gainNode.connect(analyser)
       
       setIsListening(true)
       analyze()
@@ -222,7 +244,7 @@ export default function Tuner() {
       console.error('Microphone error:', err)
       setError('Could not access microphone. Please allow microphone permissions.')
     }
-  }, [analyze])
+  }, [analyze, sensitivity])
 
   const stopListening = useCallback(() => {
     if (animationRef.current) {
@@ -243,10 +265,17 @@ export default function Tuner() {
     setClosestString(null)
     setVolume(0)
   }, [])
-
   useEffect(() => {
     return () => stopListening()
   }, [stopListening])
+
+  // Update gain node when sensitivity changes while listening
+  useEffect(() => {
+    if (gainNodeRef.current && isListening) {
+      const gainValues = [1.5, 2, 3, 5, 8]
+      gainNodeRef.current.gain.value = gainValues[sensitivity - 1] || 3
+    }
+  }, [sensitivity, isListening])
 
   // Update custom note at index
   function updateCustomNote(index, note, octave) {
@@ -472,9 +501,7 @@ export default function Tuner() {
           <div className={styles.status} style={{ color: status.color }}>
             {status.text}
           </div>
-        </div>
-
-        {/* Volume meter */}
+        </div>        {/* Volume meter */}
         <div className={styles.volumeMeter}>
           <div className={styles.volumeLabel}>Input Level</div>
           <div className={styles.volumeBar}>
@@ -482,6 +509,24 @@ export default function Tuner() {
               className={styles.volumeFill} 
               style={{ width: `${volume * 100}%` }}
             />
+          </div>
+        </div>
+
+        {/* Sensitivity control */}
+        <div className={styles.sensitivityControl}>
+          <div className={styles.sensitivityLabel}>
+            Mic Sensitivity: <span className={styles.sensitivityValue}>{['Low', 'Med-Low', 'Medium', 'High', 'Max'][sensitivity - 1]}</span>
+          </div>
+          <input
+            type="range"
+            min="1"
+            max="5"
+            value={sensitivity}
+            onChange={(e) => setSensitivity(Number(e.target.value))}
+            className={styles.sensitivitySlider}
+          />
+          <div className={styles.sensitivityHint}>
+            {sensitivity >= 4 ? '🎸 Great for acoustic guitars' : sensitivity <= 2 ? '🔌 Better for loud/amplified' : '⚖️ Balanced for most setups'}
           </div>
         </div>
 
