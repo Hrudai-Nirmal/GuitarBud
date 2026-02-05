@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "GuitarBuddy backend API",
+  "description": "Muses backend API",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

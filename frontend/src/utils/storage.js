@@ -1,5 +1,5 @@
 const SCHEMA_VERSION = 1
-const PREFIX = 'guitarbuddy:'
+const PREFIX = 'muses:'
 
 function key(k) { return PREFIX + k }
 

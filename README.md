@@ -1,4 +1,4 @@
-GuitarBuddy
+Muses
 
 Monorepo with frontend (Vite + React) and backend (Express + WebSocket).
 

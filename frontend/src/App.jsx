@@ -65,7 +65,7 @@ function App() {
           <button className={styles.backBtn} onClick={() => setView('dashboard')}>
             <ArrowLeftIcon size={18} /> Back
           </button>
-          <h1 className={styles.logo}><GuitarIcon size={24} /> GuitarBuddy</h1>
+          <h1 className={styles.logo}><GuitarIcon size={24} /> Muses</h1>
           <div className={styles.headerRight}>
             <span className={styles.roleTag}>{userRole}</span>
             <button className={styles.logoutBtn} onClick={handleLogout}>Logout</button>

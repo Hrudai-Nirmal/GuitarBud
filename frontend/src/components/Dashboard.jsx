@@ -25,7 +25,7 @@ export default function Dashboard({ onNavigate, userRole, onLogout }) {
     <div className={styles.container}>
       <div className={styles.heroSection}>
         <GuitarIcon size={40} className={styles.heroIcon} />
-        <h1 className={styles.heroTitle}>GuitarBuddy</h1>
+        <h1 className={styles.heroTitle}>Muses</h1>
         <p className={styles.heroSubtitle}>What would you like to do today?</p>
       </div>
       

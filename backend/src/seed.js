@@ -69,7 +69,7 @@ Was [D]blind, but [A]now I [D]see`,
   // Sample Song 2 - Simple chord progression for practice
   const song2 = await songs.insertOne({
     title: 'Simple Practice Song',
-    artist: 'GuitarBuddy',
+    artist: 'Muses',
     createdAt: new Date()
   });
 
@@ -123,7 +123,7 @@ E|-------1-------3---|`,
   // Sample Song 3 - Rock style
   const song3 = await songs.insertOne({
     title: 'Rock Basics',
-    artist: 'GuitarBuddy',
+    artist: 'Muses',
     createdAt: new Date()
   });
 
@@ -159,7 +159,7 @@ E|-------1-------3---|`,
   // Sample Song 4 - Fingerpicking pattern
   const song4 = await songs.insertOne({
     title: 'Peaceful Arpeggios',
-    artist: 'GuitarBuddy',
+    artist: 'Muses',
     createdAt: new Date()
   });
 
@@ -208,7 +208,7 @@ E|-----------0-------1-----------|`,
   // Sample Song 5 - Blues shuffle
   const song5 = await songs.insertOne({
     title: 'Twelve Bar Blues',
-    artist: 'GuitarBuddy',
+    artist: 'Muses',
     createdAt: new Date()
   });
 
@@ -260,7 +260,7 @@ E|---------------3-0-------|`,
   // Sample Song 6 - Folk song with capo
   const song6 = await songs.insertOne({
     title: 'Mountain Sunrise',
-    artist: 'GuitarBuddy',
+    artist: 'Muses',
     createdAt: new Date()
   });
 

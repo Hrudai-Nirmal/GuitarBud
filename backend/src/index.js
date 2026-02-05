@@ -65,7 +65,7 @@ async function start() {
 
   // Health check
   app.get('/health', (req, res) => res.json({ ok: true }));
-  app.get('/', (req, res) => res.json({ ok: true, service: 'GuitarBuddy API' }));
+  app.get('/', (req, res) => res.json({ ok: true, service: 'Muses API' }));
 
   // ========== AUTH ==========
   app.post('/auth/register', async (req, res) => {
@@ -96,7 +96,7 @@ async function start() {
         await sgMail.send({
           to: email,
           from: process.env.EMAIL_FROM,
-          subject: 'GuitarBuddy Account Verification',
+          subject: 'Muses Account Verification',
           text: `Verify your account: ${verifyUrl}`,
           html: `<p>Verify your account: <a href="${verifyUrl}">${verifyUrl}</a></p>`
         });
@@ -132,7 +132,7 @@ async function start() {
         await sgMail.send({
           to: email,
           from: process.env.EMAIL_FROM,
-          subject: 'GuitarBuddy Password Reset',
+          subject: 'Muses Password Reset',
           text: `Reset password: ${resetUrl}`,
           html: `<p>Reset password: <a href="${resetUrl}">${resetUrl}</a></p>`
         });
