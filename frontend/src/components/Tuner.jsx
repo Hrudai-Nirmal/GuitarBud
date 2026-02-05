@@ -1,23 +1,62 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { YIN } from 'pitchfinder'
 import styles from './Tuner.module.css'
-import { MicrophoneIcon, StopIcon, LightbulbIcon } from './Icons'
+import { MicrophoneIcon, StopIcon, LightbulbIcon, EditIcon, SaveIcon, CloseIcon } from './Icons'
+import { save, load } from '../utils/storage'
 
-// Standard guitar tuning frequencies (Hz)
-const STANDARD_TUNING = [
-  { note: 'E2', freq: 82.41, string: 6 },
-  { note: 'A2', freq: 110.00, string: 5 },
-  { note: 'D3', freq: 146.83, string: 4 },
-  { note: 'G3', freq: 196.00, string: 3 },
-  { note: 'B3', freq: 246.94, string: 2 },
-  { note: 'E4', freq: 329.63, string: 1 },
-]
+// All chromatic notes for selection
+const ALL_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+const OCTAVES = [1, 2, 3, 4, 5]
 
-// All chromatic notes with frequencies (A4 = 440Hz)
-const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+// Calculate frequency from note name and octave (A4 = 440Hz)
+function noteToFreq(note, octave) {
+  const noteIndex = ALL_NOTES.indexOf(note)
+  if (noteIndex === -1) return 0
+  // MIDI note number: C4 = 60, A4 = 69
+  const midiNote = (octave + 1) * 12 + noteIndex
+  return 440 * Math.pow(2, (midiNote - 69) / 12)
+}
+
+// Parse note string like "E2" to { note: 'E', octave: 2 }
+function parseNote(noteStr) {
+  const match = noteStr.match(/^([A-G]#?)(\d)$/)
+  if (!match) return null
+  return { note: match[1], octave: parseInt(match[2]) }
+}
+
+// Build tuning array from notes
+function buildTuning(notes) {
+  return notes.map((noteStr, idx) => {
+    const parsed = parseNote(noteStr)
+    if (!parsed) return null
+    return {
+      note: noteStr,
+      freq: noteToFreq(parsed.note, parsed.octave),
+      string: 6 - idx // String 6 is lowest (first in array)
+    }
+  }).filter(Boolean)
+}
+
+// Tuning presets
+const TUNING_PRESETS = {
+  'Standard': ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'],
+  'Drop D': ['D2', 'A2', 'D3', 'G3', 'B3', 'E4'],
+  'DADGAD': ['D2', 'A2', 'D3', 'G3', 'A3', 'D4'],
+  'Open G': ['D2', 'G2', 'D3', 'G3', 'B3', 'D4'],
+  'Open D': ['D2', 'A2', 'D3', 'F#3', 'A3', 'D4'],
+  'Open E': ['E2', 'B2', 'E3', 'G#3', 'B3', 'E4'],
+  'Open A': ['E2', 'A2', 'E3', 'A3', 'C#4', 'E4'],
+  'Open C': ['C2', 'G2', 'C3', 'G3', 'C4', 'E4'],
+  'Drop C': ['C2', 'G2', 'C3', 'F3', 'A3', 'D4'],
+  'Half Step Down': ['D#2', 'G#2', 'C#3', 'F#3', 'A#3', 'D#4'],
+  'Full Step Down': ['D2', 'G2', 'C3', 'F3', 'A3', 'D4'],
+  'Drop B': ['B1', 'F#2', 'B2', 'E3', 'G#3', 'C#4'],
+  'Nashville': ['E3', 'A3', 'D4', 'G4', 'B3', 'E4'],
+}
 
 // Convert frequency to note info
 function frequencyToNote(freq) {
-  if (!freq || freq < 20) return null
+  if (!freq || freq < 20 || freq > 2000) return null
   
   // Calculate semitones from A4 (440Hz)
   const semitones = 12 * Math.log2(freq / 440)
@@ -25,7 +64,7 @@ function frequencyToNote(freq) {
   const cents = Math.round((semitones - Math.round(semitones)) * 100)
   
   const octave = Math.floor(noteIndex / 12) - 1
-  const noteName = NOTE_NAMES[noteIndex % 12]
+  const noteName = ALL_NOTES[((noteIndex % 12) + 12) % 12]
   
   // Calculate exact frequency for this note
   const exactFreq = 440 * Math.pow(2, (noteIndex - 69) / 12)
@@ -40,14 +79,14 @@ function frequencyToNote(freq) {
   }
 }
 
-// Find closest guitar string
-function findClosestString(freq) {
-  if (!freq) return null
+// Find closest guitar string from current tuning
+function findClosestString(freq, tuning) {
+  if (!freq || !tuning || tuning.length === 0) return null
   
   let closest = null
   let minDiff = Infinity
   
-  for (const string of STANDARD_TUNING) {
+  for (const string of tuning) {
     const diff = Math.abs(freq - string.freq)
     if (diff < minDiff) {
       minDiff = diff
@@ -55,50 +94,11 @@ function findClosestString(freq) {
     }
   }
   
-  // Only return if within a reasonable range (within a major 3rd / ~26%)
+  // Only return if within a reasonable range (within ~26% / major 3rd)
   if (closest && minDiff < closest.freq * 0.26) {
     return closest
   }
   return null
-}
-
-// YIN algorithm for pitch detection (simplified)
-function autoCorrelate(buffer, sampleRate) {
-  const SIZE = buffer.length
-  const MIN_SAMPLES = Math.floor(sampleRate / 500) // Max freq 500Hz
-  const MAX_SAMPLES = Math.floor(sampleRate / 50)  // Min freq 50Hz
-  
-  // Check if signal is strong enough
-  let rms = 0
-  for (let i = 0; i < SIZE; i++) {
-    rms += buffer[i] * buffer[i]
-  }
-  rms = Math.sqrt(rms / SIZE)
-  
-  if (rms < 0.01) return -1 // Too quiet
-  
-  // Autocorrelation
-  let best = { correlation: 0, offset: 0 }
-  
-  for (let offset = MIN_SAMPLES; offset < MAX_SAMPLES && offset < SIZE; offset++) {
-    let correlation = 0
-    
-    for (let i = 0; i < SIZE - offset; i++) {
-      correlation += Math.abs(buffer[i] - buffer[i + offset])
-    }
-    
-    correlation = 1 - (correlation / (SIZE - offset))
-    
-    if (correlation > best.correlation) {
-      best = { correlation, offset }
-    }
-  }
-  
-  if (best.correlation > 0.9) {
-    return sampleRate / best.offset
-  }
-  
-  return -1
 }
 
 export default function Tuner() {
@@ -109,14 +109,51 @@ export default function Tuner() {
   const [error, setError] = useState(null)
   const [volume, setVolume] = useState(0)
   
+  // Tuning state
+  const [selectedPreset, setSelectedPreset] = useState('Standard')
+  const [customNotes, setCustomNotes] = useState(['E2', 'A2', 'D3', 'G3', 'B3', 'E4'])
+  const [currentTuning, setCurrentTuning] = useState(buildTuning(['E2', 'A2', 'D3', 'G3', 'B3', 'E4']))
+  const [showCustomEditor, setShowCustomEditor] = useState(false)
+  const [savedCustomTunings, setSavedCustomTunings] = useState({})
+  const [customTuningName, setCustomTuningName] = useState('')
+  
   const audioContextRef = useRef(null)
   const analyserRef = useRef(null)
   const streamRef = useRef(null)
   const animationRef = useRef(null)
   const bufferRef = useRef(null)
+  const detectPitchRef = useRef(null)
+
+  // Load saved custom tunings on mount
+  useEffect(() => {
+    const saved = load('customTunings') || {}
+    setSavedCustomTunings(saved)
+  }, [])
+
+  // Update tuning when preset changes
+  useEffect(() => {
+    if (selectedPreset === 'Custom') {
+      setCurrentTuning(buildTuning(customNotes))
+    } else if (TUNING_PRESETS[selectedPreset]) {
+      const notes = TUNING_PRESETS[selectedPreset]
+      setCustomNotes(notes)
+      setCurrentTuning(buildTuning(notes))
+    } else if (savedCustomTunings[selectedPreset]) {
+      const notes = savedCustomTunings[selectedPreset]
+      setCustomNotes(notes)
+      setCurrentTuning(buildTuning(notes))
+    }
+  }, [selectedPreset, savedCustomTunings])
+
+  // Update tuning when custom notes change (in custom mode)
+  useEffect(() => {
+    if (selectedPreset === 'Custom' || showCustomEditor) {
+      setCurrentTuning(buildTuning(customNotes))
+    }
+  }, [customNotes, selectedPreset, showCustomEditor])
 
   const analyze = useCallback(() => {
-    if (!analyserRef.current || !bufferRef.current) return
+    if (!analyserRef.current || !bufferRef.current || !detectPitchRef.current) return
     
     analyserRef.current.getFloatTimeDomainData(bufferRef.current)
     
@@ -126,15 +163,16 @@ export default function Tuner() {
       sum += bufferRef.current[i] * bufferRef.current[i]
     }
     const rms = Math.sqrt(sum / bufferRef.current.length)
-    setVolume(Math.min(rms * 5, 1)) // Normalize to 0-1
+    setVolume(Math.min(rms * 5, 1))
     
-    const freq = autoCorrelate(bufferRef.current, audioContextRef.current.sampleRate)
+    // Use pitchfinder YIN algorithm
+    const freq = detectPitchRef.current(bufferRef.current)
     
-    if (freq > 0) {
+    if (freq && freq > 50 && freq < 1000) {
       setFrequency(freq)
       const info = frequencyToNote(freq)
       setNoteInfo(info)
-      setClosestString(findClosestString(freq))
+      setClosestString(findClosestString(freq, currentTuning))
     } else {
       setFrequency(null)
       setNoteInfo(null)
@@ -142,7 +180,7 @@ export default function Tuner() {
     }
     
     animationRef.current = requestAnimationFrame(analyze)
-  }, [])
+  }, [currentTuning])
 
   const startListening = useCallback(async () => {
     try {
@@ -162,13 +200,16 @@ export default function Tuner() {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)()
       audioContextRef.current = audioContext
       
-      // Create analyser
+      // Create analyser with larger buffer for better low-frequency detection
       const analyser = audioContext.createAnalyser()
       analyser.fftSize = 4096
       analyserRef.current = analyser
       
       // Create buffer
       bufferRef.current = new Float32Array(analyser.fftSize)
+      
+      // Initialize pitchfinder YIN detector
+      detectPitchRef.current = YIN({ sampleRate: audioContext.sampleRate })
       
       // Connect microphone to analyser
       const source = audioContext.createMediaStreamSource(stream)
@@ -207,6 +248,35 @@ export default function Tuner() {
     return () => stopListening()
   }, [stopListening])
 
+  // Update custom note at index
+  function updateCustomNote(index, note, octave) {
+    const newNotes = [...customNotes]
+    newNotes[index] = `${note}${octave}`
+    setCustomNotes(newNotes)
+  }
+
+  // Save current custom tuning
+  function saveCustomTuning() {
+    if (!customTuningName.trim()) return
+    const newSaved = { ...savedCustomTunings, [customTuningName]: customNotes }
+    setSavedCustomTunings(newSaved)
+    save('customTunings', newSaved)
+    setSelectedPreset(customTuningName)
+    setShowCustomEditor(false)
+    setCustomTuningName('')
+  }
+
+  // Delete saved custom tuning
+  function deleteCustomTuning(name) {
+    const newSaved = { ...savedCustomTunings }
+    delete newSaved[name]
+    setSavedCustomTunings(newSaved)
+    save('customTunings', newSaved)
+    if (selectedPreset === name) {
+      setSelectedPreset('Standard')
+    }
+  }
+
   // Calculate needle position (-50 to 50 degrees based on cents)
   const needleRotation = noteInfo ? Math.max(-50, Math.min(50, noteInfo.cents)) : 0
   
@@ -216,11 +286,15 @@ export default function Tuner() {
     const cents = Math.abs(noteInfo.cents)
     if (cents <= 3) return { text: 'In Tune!', color: '#4ade80' }
     if (cents <= 10) return { text: 'Almost there', color: '#facc15' }
-    if (noteInfo.cents < 0) return { text: 'Tune Up', color: '#f87171' }
-    return { text: 'Tune Down', color: '#f87171' }
+    if (noteInfo.cents < 0) return { text: 'Tune Up ↑', color: '#f87171' }
+    return { text: 'Tune Down ↓', color: '#f87171' }
   }
   
   const status = getTuningStatus()
+
+  // All preset names including saved custom ones
+  const allPresets = [...Object.keys(TUNING_PRESETS), ...Object.keys(savedCustomTunings)]
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -228,9 +302,117 @@ export default function Tuner() {
       </div>
 
       <div className={styles.tunerBody}>
+        {/* Tuning selector */}
+        <div className={styles.tuningSelector}>
+          <label>Tuning:</label>
+          <select 
+            value={selectedPreset} 
+            onChange={(e) => setSelectedPreset(e.target.value)}
+            className={styles.tuningSelect}
+          >
+            {Object.keys(TUNING_PRESETS).map(name => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+            {Object.keys(savedCustomTunings).length > 0 && (
+              <optgroup label="My Custom Tunings">
+                {Object.keys(savedCustomTunings).map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+          <button 
+            className={styles.customBtn}
+            onClick={() => setShowCustomEditor(!showCustomEditor)}
+            title="Create custom tuning"
+          >
+            <EditIcon size={16} />
+          </button>
+        </div>
+
+        {/* Custom tuning editor */}
+        {showCustomEditor && (
+          <div className={styles.customEditor}>
+            <h4>Custom Tuning</h4>
+            <div className={styles.stringEditor}>
+              {customNotes.map((noteStr, idx) => {
+                const parsed = parseNote(noteStr)
+                return (
+                  <div key={idx} className={styles.stringRow}>
+                    <span className={styles.stringLabel}>{6 - idx}</span>
+                    <select 
+                      value={parsed?.note || 'E'}
+                      onChange={(e) => updateCustomNote(idx, e.target.value, parsed?.octave || 2)}
+                    >
+                      {ALL_NOTES.map(n => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={parsed?.octave || 2}
+                      onChange={(e) => updateCustomNote(idx, parsed?.note || 'E', parseInt(e.target.value))}
+                    >
+                      {OCTAVES.map(o => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </select>
+                    <span className={styles.freqPreview}>
+                      {buildTuning([noteStr])[0]?.freq.toFixed(1)} Hz
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+            <div className={styles.saveCustom}>
+              <input
+                type="text"
+                placeholder="Tuning name..."
+                value={customTuningName}
+                onChange={(e) => setCustomTuningName(e.target.value)}
+                className={styles.tuningNameInput}
+              />
+              <button 
+                className={styles.saveBtn}
+                onClick={saveCustomTuning}
+                disabled={!customTuningName.trim()}
+              >
+                <SaveIcon size={14} /> Save
+              </button>
+              <button 
+                className={styles.cancelBtn}
+                onClick={() => {
+                  setShowCustomEditor(false)
+                  // Reset to current preset
+                  if (TUNING_PRESETS[selectedPreset]) {
+                    setCustomNotes(TUNING_PRESETS[selectedPreset])
+                  }
+                }}
+              >
+                <CloseIcon size={14} />
+              </button>
+            </div>
+            {/* Show saved custom tunings for deletion */}
+            {Object.keys(savedCustomTunings).length > 0 && (
+              <div className={styles.savedList}>
+                <h5>Saved Custom Tunings</h5>
+                {Object.entries(savedCustomTunings).map(([name, notes]) => (
+                  <div key={name} className={styles.savedItem}>
+                    <span onClick={() => { setSelectedPreset(name); setShowCustomEditor(false) }}>
+                      {name}: {notes.join(' ')}
+                    </span>
+                    <button onClick={() => deleteCustomTuning(name)} className={styles.deleteBtn}>
+                      <CloseIcon size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* String indicators */}
         <div className={styles.strings}>
-          {STANDARD_TUNING.map((s) => (
+          {currentTuning.map((s) => (
             <div 
               key={s.string} 
               className={`${styles.stringIndicator} ${closestString?.string === s.string ? styles.active : ''}`}
@@ -301,7 +483,9 @@ export default function Tuner() {
               style={{ width: `${volume * 100}%` }}
             />
           </div>
-        </div>        {/* Controls */}
+        </div>
+
+        {/* Controls */}
         <div className={styles.controls}>
           {!isListening ? (
             <button className={styles.startBtn} onClick={startListening}>
@@ -320,10 +504,10 @@ export default function Tuner() {
         <div className={styles.instructions}>
           <h4>How to use:</h4>
           <ol>
+            <li>Select your tuning from the dropdown or create a custom one</li>
             <li>Click "Start Tuning" and allow microphone access</li>
             <li>Play an open string on your guitar</li>
             <li>Watch the needle - center means in tune!</li>
-            <li>Green = perfect, Yellow = close, Red = needs adjustment</li>
           </ol>
           <p className={styles.tip}>
             <LightbulbIcon size={16} /> Tip: Tune in a quiet environment for best results
