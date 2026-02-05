@@ -65,7 +65,7 @@ function App() {
           <button className={styles.backBtn} onClick={() => setView('dashboard')}>
             <ArrowLeftIcon size={18} /> Back
           </button>
-          <h1 className={styles.logo}><img src="/muses.png" alt="Muses" className={styles.logoImg} /> MUSES</h1>
+          <h1 className={styles.logo}><img src="/muses.svg" alt="Muses" className={styles.logoImg} /> MUSES</h1>
           <div className={styles.headerRight}>
             <span className={styles.roleTag}>{userRole}</span>
             <button className={styles.logoutBtn} onClick={handleLogout}>Logout</button>
