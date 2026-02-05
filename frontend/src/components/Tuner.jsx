@@ -109,7 +109,8 @@ export default function Tuner() {
   const [error, setError] = useState(null)
   const [volume, setVolume] = useState(0)
   
-  // Tuning state  const [selectedPreset, setSelectedPreset] = useState('Standard')
+  // Tuning state
+  const [selectedPreset, setSelectedPreset] = useState('Standard')
   const [customNotes, setCustomNotes] = useState(['E2', 'A2', 'D3', 'G3', 'B3', 'E4'])
   const [currentTuning, setCurrentTuning] = useState(buildTuning(['E2', 'A2', 'D3', 'G3', 'B3', 'E4']))
   const [showCustomEditor, setShowCustomEditor] = useState(false)
