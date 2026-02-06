@@ -350,6 +350,51 @@ export const ExitIcon = ({ size = 24, className = '' }) => (
   </Icon>
 )
 
+// Teacher icon - graduation cap 🎓
+export const TeacherIcon = ({ size = 24, className = '' }) => (
+  <Icon size={size} className={className}>
+    <path d="M12 3L1 9L5 11.18V17.18L12 21L19 17.18V11.18L21 10.09V17H23V9L12 3Z" fill="#8B5CF6"/>
+    <path d="M12 3L1 9L12 15L21 10.09V9L12 3Z" fill="#A78BFA"/>
+    <path d="M5 11.18V17.18L12 21L19 17.18V11.18L12 15L5 11.18Z" fill="#7C3AED"/>
+  </Icon>
+)
+
+// Dollar/Money icon - green dollar sign 💰
+export const DollarIcon = ({ size = 24, className = '' }) => (
+  <Icon size={size} className={className}>
+    <circle cx="12" cy="12" r="10" fill="#10B981"/>
+    <path d="M12 6V18M9 9.5C9 8.12 10.34 7 12 7C13.66 7 15 8.12 15 9.5C15 10.88 13.66 12 12 12C10.34 12 9 13.12 9 14.5C9 15.88 10.34 17 12 17C13.66 17 15 15.88 15 14.5" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+  </Icon>
+)
+
+// Chart/Analytics icon - colorful bar chart 📊
+export const ChartIcon = ({ size = 24, className = '' }) => (
+  <Icon size={size} className={className}>
+    <rect x="3" y="14" width="4" height="8" rx="1" fill="#60A5FA"/>
+    <rect x="10" y="8" width="4" height="14" rx="1" fill="#A78BFA"/>
+    <rect x="17" y="3" width="4" height="19" rx="1" fill="#F472B6"/>
+    <rect x="3" y="14" width="4" height="3" fill="#93C5FD"/>
+    <rect x="10" y="8" width="4" height="3" fill="#C4B5FD"/>
+    <rect x="17" y="3" width="4" height="3" fill="#F9A8D4"/>
+  </Icon>
+)
+
+// Toggle On icon - green toggle
+export const ToggleOnIcon = ({ size = 24, className = '' }) => (
+  <Icon size={size} className={className}>
+    <rect x="2" y="7" width="20" height="10" rx="5" fill="#10B981"/>
+    <circle cx="17" cy="12" r="4" fill="white"/>
+  </Icon>
+)
+
+// Toggle Off icon - gray toggle
+export const ToggleOffIcon = ({ size = 24, className = '' }) => (
+  <Icon size={size} className={className}>
+    <rect x="2" y="7" width="20" height="10" rx="5" fill="#4B5563"/>
+    <circle cx="7" cy="12" r="4" fill="white"/>
+  </Icon>
+)
+
 export default {
   GuitarIcon,
   MusicNoteIcon,
@@ -384,4 +429,9 @@ export default {
   PlusIcon,
   StopIcon,
   ExitIcon,
+  TeacherIcon,
+  DollarIcon,
+  ChartIcon,
+  ToggleOnIcon,
+  ToggleOffIcon,
 }

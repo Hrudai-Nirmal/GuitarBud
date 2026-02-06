@@ -32,4 +32,20 @@ async function createSong(token, payload) { return apiFetch('/api/songs', token,
 async function getSetlists(token) { return apiFetch('/api/setlists', token) }
 async function createSetlist(token, payload) { return apiFetch('/api/setlists', token, { method: 'POST', body: JSON.stringify(payload) }) }
 
-export { apiFetch, getSongs, searchSongs, getSong, getVersion, createSong, getSetlists, createSetlist }
+// Teacher API helpers
+async function getMyLessons(token) { return apiFetch('/api/my-lessons', token) }
+async function updateVersion(token, id, payload) { return apiFetch(`/api/versions/${id}`, token, { method: 'PUT', body: JSON.stringify(payload) }) }
+async function deleteVersion(token, id) { return apiFetch(`/api/versions/${id}`, token, { method: 'DELETE' }) }
+async function updateSong(token, id, payload) { return apiFetch(`/api/songs/${id}`, token, { method: 'PUT', body: JSON.stringify(payload) }) }
+async function createVersion(token, songId, payload) { return apiFetch(`/api/songs/${songId}/versions`, token, { method: 'POST', body: JSON.stringify(payload) }) }
+async function getTeacherStats(token) { return apiFetch('/api/teacher/stats', token) }
+
+// Purchase API helpers
+async function getMyPurchases(token) { return apiFetch('/api/my-purchases', token) }
+async function purchaseVersion(token, versionId) { return apiFetch(`/api/purchase/${versionId}`, token, { method: 'POST' }) }
+async function checkAccess(token, versionId) { return apiFetch(`/api/versions/${versionId}/access`, token) }
+async function getFullVersion(token, versionId) { return apiFetch(`/api/versions/${versionId}/full`, token) }
+
+export { apiFetch, getSongs, searchSongs, getSong, getVersion, createSong, getSetlists, createSetlist,
+  getMyLessons, updateVersion, deleteVersion, updateSong, createVersion, getTeacherStats,
+  getMyPurchases, purchaseVersion, checkAccess, getFullVersion }

@@ -7,6 +7,7 @@ import Tuner from './components/Tuner'
 import ChordCharts from './components/ChordCharts'
 import ScaleCharts from './components/ScaleCharts'
 import Performance from './components/Performance'
+import TeacherDashboard from './components/TeacherDashboard'
 import { GuitarIcon, DownloadIcon, BookIcon, ArrowLeftIcon } from './components/Icons'
 import { apiFetch } from './api'
 import { save, load } from './utils/storage'
@@ -111,6 +112,10 @@ function App() {
 
       {view === 'scales' && (
         <ScaleCharts />
+      )}
+
+      {view === 'teacher' && (
+        <TeacherDashboard token={token} />
       )}
 
       {view === 'mylessons' && (

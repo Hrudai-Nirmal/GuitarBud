@@ -50,18 +50,22 @@ async function start() {
   }
   db = dbClient.db();
   console.log('Connected to MongoDB');
-
   // Collections
   const users = db.collection('users');
   const songs = db.collection('songs');
   const versions = db.collection('versions');
   const setlists = db.collection('setlists');
   const sessions = db.collection('sessions');
+  const purchases = db.collection('purchases');
 
   // Create indexes
   await songs.createIndex({ title: 'text', artist: 'text' });
   await versions.createIndex({ songId: 1 });
   await versions.createIndex({ monetized: 1 });
+  await versions.createIndex({ teacherId: 1 });
+  await purchases.createIndex({ userId: 1 });
+  await purchases.createIndex({ versionId: 1 });
+  await purchases.createIndex({ teacherId: 1 });
 
   // Health check
   app.get('/health', (req, res) => res.json({ ok: true }));
@@ -224,22 +228,52 @@ async function start() {
       return res.status(400).json({ error: 'invalid_id' });
     }
   });
-
   // ========== TEACHER: Create/update songs & versions ==========
   // Create song (teacher only)
   app.post('/api/songs', authMiddleware, async (req, res) => {
     if (req.user.role !== 'teacher') return res.status(403).json({ error: 'teachers_only' });
     const { title, artist } = req.body;
     if (!title) return res.status(400).json({ error: 'title_required' });
-    const result = await songs.insertOne({ title, artist: artist || '', createdAt: new Date() });
+    const result = await songs.insertOne({ 
+      title, 
+      artist: artist || '', 
+      createdBy: req.user.sub,
+      createdAt: new Date() 
+    });
     res.json({ id: result.insertedId });
   });
 
+  // Update song metadata (teacher only, must have a version for this song)
+  app.put('/api/songs/:id', authMiddleware, async (req, res) => {
+    if (req.user.role !== 'teacher') return res.status(403).json({ error: 'teachers_only' });
+    try {
+      const song = await songs.findOne({ _id: new ObjectId(req.params.id) });
+      if (!song) return res.status(404).json({ error: 'not_found' });
+      
+      // Check if teacher has a version for this song
+      const hasVersion = await versions.findOne({ songId: req.params.id, teacherId: req.user.sub });
+      if (!hasVersion && song.createdBy !== req.user.sub) {
+        return res.status(403).json({ error: 'not_authorized' });
+      }
+      
+      const { title, artist } = req.body;
+      const updateData = {
+        ...(title !== undefined && { title }),
+        ...(artist !== undefined && { artist }),
+        updatedAt: new Date()
+      };
+      
+      await songs.updateOne({ _id: song._id }, { $set: updateData });
+      res.json({ ok: true });
+    } catch (e) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+  });
   // Create version for a song (teacher only)
   app.post('/api/songs/:songId/versions', authMiddleware, async (req, res) => {
     if (req.user.role !== 'teacher') return res.status(403).json({ error: 'teachers_only' });
     const { songId } = req.params;
-    const { content, key, bpm, capo, timeSignature, backingTrackUrl, youtubeUrl, blocks, monetized } = req.body;
+    const { content, key, bpm, capo, timeSignature, backingTrackUrl, youtubeUrl, blocks, monetized, price } = req.body;
     // blocks: [{ type: 'lyrics'|'tabs', beatStart, beatEnd, data }]
     const user = await users.findOne({ _id: new ObjectId(req.user.sub) });
     const versionData = {
@@ -257,6 +291,7 @@ async function start() {
       rating: 0,
       ratingCount: 0,
       monetized: monetized || false,
+      price: price || 0,
       createdAt: new Date()
     };
     const result = await versions.insertOne(versionData);
@@ -279,6 +314,232 @@ async function start() {
       res.json({ rating: newRating, ratingCount: newCount });
     } catch (e) {
       return res.status(400).json({ error: 'invalid_id' });
+    }
+  });
+
+  // ========== TEACHER: My Lessons ==========
+  // Get all lessons created by the current teacher
+  app.get('/api/my-lessons', authMiddleware, async (req, res) => {
+    if (req.user.role !== 'teacher') return res.status(403).json({ error: 'teachers_only' });
+    try {
+      const myVersions = await versions.find({ teacherId: req.user.sub }).toArray();
+      // Attach song info to each version
+      const songIds = [...new Set(myVersions.map(v => v.songId))];
+      const songList = await songs.find({ _id: { $in: songIds.map(id => new ObjectId(id)) } }).toArray();
+      const songMap = {};
+      songList.forEach(s => { songMap[String(s._id)] = s; });
+      const result = myVersions.map(v => ({
+        ...v,
+        song: songMap[v.songId] || null
+      }));
+      res.json(result);
+    } catch (e) {
+      console.error('my-lessons error', e);
+      return res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // Update a lesson version (teacher only, own lessons)
+  app.put('/api/versions/:id', authMiddleware, async (req, res) => {
+    if (req.user.role !== 'teacher') return res.status(403).json({ error: 'teachers_only' });
+    try {
+      const ver = await versions.findOne({ _id: new ObjectId(req.params.id) });
+      if (!ver) return res.status(404).json({ error: 'not_found' });
+      if (ver.teacherId !== req.user.sub) return res.status(403).json({ error: 'not_owner' });
+      
+      const { content, key, bpm, capo, timeSignature, backingTrackUrl, youtubeUrl, blocks, monetized, price } = req.body;
+      const updateData = {
+        ...(content !== undefined && { content }),
+        ...(key !== undefined && { key }),
+        ...(bpm !== undefined && { bpm }),
+        ...(capo !== undefined && { capo }),
+        ...(timeSignature !== undefined && { timeSignature }),
+        ...(backingTrackUrl !== undefined && { backingTrackUrl }),
+        ...(youtubeUrl !== undefined && { youtubeUrl }),
+        ...(blocks !== undefined && { blocks }),
+        ...(monetized !== undefined && { monetized }),
+        ...(price !== undefined && { price }),
+        updatedAt: new Date()
+      };
+      
+      await versions.updateOne({ _id: ver._id }, { $set: updateData });
+      res.json({ ok: true, id: ver._id });
+    } catch (e) {
+      console.error('update version error', e);
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+  });
+
+  // Delete a lesson version (teacher only, own lessons)
+  app.delete('/api/versions/:id', authMiddleware, async (req, res) => {
+    if (req.user.role !== 'teacher') return res.status(403).json({ error: 'teachers_only' });
+    try {
+      const ver = await versions.findOne({ _id: new ObjectId(req.params.id) });
+      if (!ver) return res.status(404).json({ error: 'not_found' });
+      if (ver.teacherId !== req.user.sub) return res.status(403).json({ error: 'not_owner' });
+      
+      await versions.deleteOne({ _id: ver._id });
+      res.json({ ok: true });
+    } catch (e) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+  });
+  // ========== PURCHASES ==========
+  // Get student's purchased lessons
+  app.get('/api/my-purchases', authMiddleware, async (req, res) => {
+    try {
+      const myPurchases = await purchases.find({ userId: req.user.sub }).toArray();
+      
+      if (myPurchases.length === 0) return res.json([]);
+      
+      // Get the purchased versions
+      const versionIds = myPurchases.map(p => new ObjectId(p.versionId));
+      const purchasedVersions = await versions.find({ _id: { $in: versionIds } }).toArray();
+      
+      // Attach song info
+      const songIds = [...new Set(purchasedVersions.map(v => v.songId))];
+      const songList = await songs.find({ _id: { $in: songIds.map(id => new ObjectId(id)) } }).toArray();
+      const songMap = {};
+      songList.forEach(s => { songMap[String(s._id)] = s; });
+      
+      const result = purchasedVersions.map(v => ({
+        ...v,
+        song: songMap[v.songId] || null,
+        purchasedAt: myPurchases.find(p => p.versionId === String(v._id))?.purchasedAt
+      }));
+      res.json(result);
+    } catch (e) {
+      console.error('my-purchases error', e);
+      return res.status(500).json({ error: 'server_error' });
+    }
+  });
+  // Purchase a monetized lesson (simplified - no real payment)
+  app.post('/api/purchase/:versionId', authMiddleware, async (req, res) => {
+    try {
+      const versionId = req.params.versionId;
+      
+      // Check if version exists and is monetized
+      const ver = await versions.findOne({ _id: new ObjectId(versionId) });
+      if (!ver) return res.status(404).json({ error: 'not_found' });
+      if (!ver.monetized) return res.status(400).json({ error: 'not_monetized' });
+      
+      // Check if already purchased
+      const existing = await purchases.findOne({ userId: req.user.sub, versionId });
+      if (existing) return res.status(400).json({ error: 'already_purchased' });
+      
+      // Create purchase record (in production, integrate with Stripe/payment processor)
+      await purchases.insertOne({
+        userId: req.user.sub,
+        versionId,
+        teacherId: ver.teacherId,
+        price: ver.price || 0,
+        purchasedAt: new Date()
+      });
+      
+      res.json({ ok: true, versionId });
+    } catch (e) {
+      console.error('purchase error', e);
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+  });
+
+  // Check if user has access to a version (purchased or free)
+  app.get('/api/versions/:id/access', authMiddleware, async (req, res) => {
+    try {
+      const ver = await versions.findOne({ _id: new ObjectId(req.params.id) });
+      if (!ver) return res.status(404).json({ error: 'not_found' });
+      
+      // Free lessons - everyone has access
+      if (!ver.monetized) {
+        return res.json({ hasAccess: true, reason: 'free' });
+      }
+        // Teacher owns it
+      if (ver.teacherId === req.user.sub) {
+        return res.json({ hasAccess: true, reason: 'owner' });
+      }
+      
+      // Check purchase
+      const purchase = await purchases.findOne({ userId: req.user.sub, versionId: req.params.id });
+      if (purchase) {
+        return res.json({ hasAccess: true, reason: 'purchased' });
+      }
+      
+      return res.json({ hasAccess: false, price: ver.price || 0 });
+    } catch (e) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+  });
+
+  // Get a specific version (with access check for monetized)
+  app.get('/api/versions/:id/full', authMiddleware, async (req, res) => {
+    try {
+      const ver = await versions.findOne({ _id: new ObjectId(req.params.id) });
+      if (!ver) return res.status(404).json({ error: 'not_found' });
+        // Check access for monetized content
+      if (ver.monetized) {
+        const isOwner = ver.teacherId === req.user.sub;
+        if (!isOwner) {
+          const purchase = await purchases.findOne({ userId: req.user.sub, versionId: req.params.id });
+          if (!purchase) {
+            // Return limited info (no content)
+            const song = await songs.findOne({ _id: new ObjectId(ver.songId) });
+            return res.json({
+              _id: ver._id,
+              songId: ver.songId,
+              teacherName: ver.teacherName,
+              key: ver.key,
+              bpm: ver.bpm,
+              rating: ver.rating,
+              ratingCount: ver.ratingCount,
+              monetized: true,
+              price: ver.price || 0,
+              hasAccess: false,
+              song
+            });
+          }
+        }
+      }
+      
+      const song = await songs.findOne({ _id: new ObjectId(ver.songId) });
+      res.json({ ...ver, song, hasAccess: true });
+    } catch (e) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+  });
+  // ========== TEACHER ANALYTICS ==========
+  app.get('/api/teacher/stats', authMiddleware, async (req, res) => {
+    if (req.user.role !== 'teacher') return res.status(403).json({ error: 'teachers_only' });
+    try {
+      // Get my lessons count
+      const lessonCount = await versions.countDocuments({ teacherId: req.user.sub });
+      
+      // Get monetized lessons count
+      const monetizedCount = await versions.countDocuments({ teacherId: req.user.sub, monetized: true });
+      
+      // Get total sales
+      const sales = await purchases.find({ teacherId: req.user.sub }).toArray();
+      const totalSales = sales.length;
+      const totalRevenue = sales.reduce((sum, p) => sum + (p.price || 0), 0);
+      
+      // Get average rating across all lessons
+      const myVersions = await versions.find({ teacherId: req.user.sub, ratingCount: { $gt: 0 } }).toArray();
+      let avgRating = 0;
+      if (myVersions.length > 0) {
+        const totalRating = myVersions.reduce((sum, v) => sum + (v.rating || 0) * (v.ratingCount || 0), 0);
+        const totalCount = myVersions.reduce((sum, v) => sum + (v.ratingCount || 0), 0);
+        avgRating = totalCount > 0 ? Math.round((totalRating / totalCount) * 100) / 100 : 0;
+      }
+      
+      res.json({
+        lessonCount,
+        monetizedCount,
+        totalSales,
+        totalRevenue,
+        avgRating
+      });
+    } catch (e) {
+      console.error('teacher stats error', e);
+      return res.status(500).json({ error: 'server_error' });
     }
   });
 
