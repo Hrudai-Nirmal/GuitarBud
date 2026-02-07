@@ -27,8 +27,8 @@ function App() {
   }, [token])
 
   useEffect(() => {
-    if (userRole) localStorage.setItem('userRole', userRole)
-  }, [userRole])
+    if (userRole && token) localStorage.setItem('userRole', userRole)
+  }, [userRole, token])
 
   // Validate token on mount
   useEffect(() => {
@@ -44,11 +44,16 @@ function App() {
   }, [token])
 
   function handleAuth(authToken, role) {
+    const r = role || 'student'
     setToken(authToken)
-    if (role) setUserRole(role)
+    setUserRole(r)
+    localStorage.setItem('token', authToken)
+    localStorage.setItem('userRole', r)
   }
 
   function handleLogout() {
+    localStorage.removeItem('token')
+    localStorage.removeItem('userRole')
     setToken(null)
     setUserRole('student')
     setView('dashboard')
