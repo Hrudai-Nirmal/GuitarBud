@@ -13,12 +13,13 @@ export default function Auth({ onAuth }) {
   const [resetMode, setResetMode] = useState('request') // or 'confirm'
   const [resetToken, setResetToken] = useState('')
   const [newPassword, setNewPassword] = useState('')
-
   const ERROR_MESSAGES = {
     invalid_credentials: 'Invalid email or password.',
     no_teacher_account: 'No teacher account found for this email. Register as a teacher or login as a student.',
     no_student_account: 'No student account found for this email. Register as a student or login as a teacher.',
     invalid_input: 'Please enter both email and password.',
+    role_exists: 'You already have this account type. Try logging in instead.',
+    user_exists: 'An account with this email already exists.',
   }
 
   async function submit(e) {
@@ -68,8 +69,10 @@ export default function Auth({ onAuth }) {
         })
       }
       setMode('login')
+      setLoginRole(role)
+      setError(null)
     } catch (e) {
-      setError(e.message)
+      setError(ERROR_MESSAGES[e.message] || e.message)
     }
   }
 

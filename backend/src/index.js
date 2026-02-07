@@ -75,21 +75,42 @@ async function start() {
   app.post('/auth/register', async (req, res) => {
     const { email, password, role, resume } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'invalid_input' });
+    const requestedRole = role || 'student';
     const existing = await users.findOne({ email });
-    if (existing) return res.status(409).json({ error: 'user_exists' });
+
+    if (existing) {
+      // If user already exists, allow adding a new role to the same account
+      const existingRoles = existing.roles || [existing.role || 'student'];
+      if (existingRoles.includes(requestedRole)) {
+        return res.status(409).json({ error: 'role_exists', message: `You already have a ${requestedRole} account. Try logging in instead.` });
+      }
+      // Verify password matches the existing account
+      const bcrypt = require('bcrypt');
+      const ok = await bcrypt.compare(password, existing.password);
+      if (!ok) return res.status(401).json({ error: 'invalid_credentials', message: 'An account with this email exists. Enter your current password to add the new role.' });
+      // Add the new role
+      const updatedRoles = [...existingRoles, requestedRole];
+      const update = { $set: { roles: updatedRoles } };
+      if (requestedRole === 'teacher' && resume) update.$set.resume = resume;
+      await users.updateOne({ _id: existing._id }, update);
+      return res.json({ id: existing._id, email, role: requestedRole, roles: updatedRoles, addedRole: true });
+    }
+
     const bcrypt = require('bcrypt');
     const hashed = await bcrypt.hash(password, 10);
-    const verifyToken = require('crypto').randomBytes(24).toString('hex');    const userData = { 
+    const verifyToken = require('crypto').randomBytes(24).toString('hex');
+    const userData = { 
       email, 
       password: hashed, 
-      role: role || 'student',
+      roles: [requestedRole],
+      role: requestedRole, // keep for backward compat
       resume: resume || null,
       verified: true,
       createdAt: new Date(), 
       verifyToken 
     };
     const result = await users.insertOne(userData);
-    const resp = { id: result.insertedId, email, role: userData.role };
+    const resp = { id: result.insertedId, email, role: userData.role, roles: userData.roles };
 
     if (sgMail && process.env.EMAIL_FROM) {
       const verifyUrl = `${process.env.CORS_ORIGIN || 'http://localhost:5173'}/verify?token=${verifyToken}`;
@@ -156,7 +177,6 @@ async function start() {
     await users.updateOne({ _id: u._id }, { $set: { password: hashed }, $unset: { resetToken: '', resetExpires: '' } });
     return res.json({ ok: true });
   });
-
   app.post('/auth/login', async (req, res) => {
     const { email, password, role: requestedRole } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'invalid_input' });
@@ -165,18 +185,20 @@ async function start() {
     const bcrypt = require('bcrypt');
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ error: 'invalid_credentials' });
-    const actualRole = user.role || 'student';
-    // If caller specified a role, enforce it matches
-    if (requestedRole && requestedRole !== actualRole) {
+    // Support both legacy single role and new roles array
+    const userRoles = user.roles || [user.role || 'student'];
+    // If caller specified a role, check it exists in user's roles
+    if (requestedRole && !userRoles.includes(requestedRole)) {
       if (requestedRole === 'teacher') {
-        return res.status(403).json({ error: 'no_teacher_account', message: 'No teacher account found for this email. Please register as a teacher or login as a student.' });
+        return res.status(403).json({ error: 'no_teacher_account', message: 'No teacher account found for this email. Register as a teacher first, or login as a student.' });
       } else {
-        return res.status(403).json({ error: 'no_student_account', message: 'No student account found for this email. Please register as a student or login as a teacher.' });
+        return res.status(403).json({ error: 'no_student_account', message: 'No student account found for this email. Register as a student first, or login as a teacher.' });
       }
     }
+    const loginRole = requestedRole || userRoles[0];
     const jwt = require('jsonwebtoken');
-    const token = jwt.sign({ sub: String(user._id), email: user.email, role: actualRole }, JWT_SECRET, { expiresIn: '7d' });
-    return res.json({ token, role: actualRole });
+    const token = jwt.sign({ sub: String(user._id), email: user.email, role: loginRole }, JWT_SECRET, { expiresIn: '7d' });
+    return res.json({ token, role: loginRole, roles: userRoles });
   });
 
   // JWT middleware
@@ -194,9 +216,11 @@ async function start() {
       return res.status(401).json({ error: 'invalid_token' });
     }
   }
-
-  app.get('/api/me', authMiddleware, (req, res) => {
-    res.json({ id: req.user.sub, email: req.user.email, role: req.user.role });
+  app.get('/api/me', authMiddleware, async (req, res) => {
+    // Fetch fresh roles from DB in case they were updated after token was issued
+    const user = await users.findOne({ _id: new ObjectId(req.user.sub) });
+    const roles = user ? (user.roles || [user.role || 'student']) : [req.user.role];
+    res.json({ id: req.user.sub, email: req.user.email, role: req.user.role, roles });
   });
 
   // ========== SONGS (public catalog) ==========
