@@ -1,15 +1,27 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import styles from './LessonViewer.module.css'
 import ChordDiagram from './ChordDiagram'
+import { getChordData } from '../utils/chordLibrary'
 import useMetronome from '../hooks/useMetronome'
 import { apiFetch } from '../api'
 import { PlayIcon, PauseIcon, ArrowLeftIcon, ArrowRightIcon } from './Icons'
 
-// Extract chords from content (ChordPro format [Chord])
+// Section header keywords that should NOT be treated as chords
+const SECTION_KEYWORDS = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'pre-chorus', 'prechorus',
+  'interlude', 'solo', 'tab', 'riff', 'hook', 'break', 'coda', 'ending', 'instrumental',
+  'repeat', 'x2', 'x3', 'x4', 'fade', 'spoken', 'whispered', 'freely']
+
+function isSectionLabel(token) {
+  const lower = token.toLowerCase().trim()
+  return SECTION_KEYWORDS.some(k => lower.includes(k))
+}
+
+// Extract chords from content (ChordPro format [Chord]), filtering out section labels
+// and anything not in the chord library
 function extractChords(content) {
   const matches = content?.match(/\[([^\]]+)\]/g) || []
   const unique = [...new Set(matches.map(m => m.slice(1, -1)))]
-  return unique
+  return unique.filter(token => !isSectionLabel(token) && getChordData(token) !== null)
 }
 
 // Parse time signature like "4/4" -> { beats: 4, noteValue: 4 }
@@ -143,12 +155,9 @@ function renderContent(content, blocks, { timeSig, showGrid, compactMode, curren
       chords.push({ chord: match[1], index: match.index })
     }
     const textLine = line.replace(/\[([^\]]+)\]/g, '')
-    
-    // Check if this is a section header (like [Verse], [Chorus], etc)
+      // Check if this is a section header (like [Verse], [Chorus], etc)
     if (chords.length === 1 && textLine.trim() === '') {
-      const sectionKeywords = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'pre-chorus', 'interlude', 'solo', 'tab', 'riff']
-      const isSection = sectionKeywords.some(k => chords[0].chord.toLowerCase().includes(k))
-      if (isSection) {
+      if (isSectionLabel(chords[0].chord)) {
         elements.push(<div key={i} className={styles.sectionHeader}>[{chords[0].chord}]</div>)
         return
       }
@@ -325,7 +334,7 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
           <h2 className={styles.artistName}>{song?.artist || 'Unknown Artist'}</h2>
         </div>
         <div className={styles.meta}>
-          <span className={styles.metaItem}>Key: <strong>{version.key || 'C'}{version.keyQuality === 'minor' ? 'm' : ''}</strong></span>
+          <span className={styles.metaItem}>Key: <strong>{version.key || 'C'} {version.keyQuality === 'minor' ? 'minor' : 'major'}</strong></span>
           <span className={styles.metaItem}>
             BPM: <input 
               type="number" 
