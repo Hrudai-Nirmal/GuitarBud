@@ -79,18 +79,15 @@ async function start() {
     if (existing) return res.status(409).json({ error: 'user_exists' });
     const bcrypt = require('bcrypt');
     const hashed = await bcrypt.hash(password, 10);
-    const verifyToken = require('crypto').randomBytes(24).toString('hex');
-    const userData = { 
+    const verifyToken = require('crypto').randomBytes(24).toString('hex');    const userData = { 
       email, 
       password: hashed, 
       role: role || 'student',
       resume: resume || null,
-      verified: role === 'student', // students auto-verified, teachers need admin approval (but we auto-approve for now)
+      verified: true,
       createdAt: new Date(), 
       verifyToken 
     };
-    // For now, auto-verify teachers too
-    userData.verified = true;
     const result = await users.insertOne(userData);
     const resp = { id: result.insertedId, email, role: userData.role };
 
