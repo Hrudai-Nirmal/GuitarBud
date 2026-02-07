@@ -251,6 +251,9 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
   const [currentBeat, setCurrentBeat] = useState(0)
   const [showGrid, setShowGrid] = useState(true) // Show grid by default
   const [compactMode, setCompactMode] = useState(true) // Compact: just bar numbers
+  const [purchasing, setPurchasing] = useState(false)
+  const [purchaseError, setPurchaseError] = useState(null)
+  const [purchased, setPurchased] = useState(false)
   
   const contentRef = useRef(null)
   const lineRefs = useRef([])
@@ -322,8 +325,32 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
       </span>
     )
   }
-
   if (!version) return null
+
+  const isLocked = version.monetized && version.hasAccess === false && !purchased
+
+  async function handlePurchase() {
+    setPurchasing(true)
+    setPurchaseError(null)
+    try {
+      await apiFetch(`/api/purchase/${version._id}`, token, { method: 'POST' })
+      setPurchased(true)
+      // Reload the full version with content
+      if (onSelectVersion) {
+        const fullVersion = await apiFetch(`/api/versions/${version._id}/full`, token)
+        if (fullVersion) onSelectVersion(fullVersion)
+      }
+    } catch (e) {
+      const msg = e?.error === 'already_purchased' ? 'Already purchased! Refreshing...' : 'Purchase failed. Please try again.'
+      setPurchaseError(msg)
+      if (e?.error === 'already_purchased') {
+        setPurchased(true)
+        const fullVersion = await apiFetch(`/api/versions/${version._id}/full`, token)
+        if (fullVersion && onSelectVersion) onSelectVersion(fullVersion)
+      }
+    }
+    setPurchasing(false)
+  }
 
   return (
     <div className={styles.viewer}>
@@ -349,102 +376,147 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
           )}
           <span className={styles.metaItem}>Time: <strong>{version.timeSignature || '4/4'}</strong></span>
         </div>
-      </header>      {/* Controls */}
-      <div className={styles.controls}>
-        <div className={styles.controlGroup}>
-          <button 
-            className={`${styles.controlBtn} ${showGrid ? styles.active : ''}`}
-            onClick={() => setShowGrid(!showGrid)}
-          >
-            Bars {showGrid ? 'ON' : 'OFF'}
-          </button>
-          {showGrid && (
-            <button 
-              className={`${styles.controlBtn} ${!compactMode ? styles.active : ''}`}
-              onClick={() => setCompactMode(!compactMode)}
-            >
-              {compactMode ? 'Beats' : 'Compact'}
-            </button>
-          )}          <button 
-            className={`${styles.controlBtn} ${metronomeOn ? styles.active : ''}`}
-            onClick={() => setMetronomeOn(!metronomeOn)}
-          >
-            Metronome {metronomeOn ? <PauseIcon size={14} /> : <PlayIcon size={14} />}
-          </button>
-          <button 
-            className={`${styles.controlBtn} ${autoscroll ? styles.active : ''}`}
-            onClick={() => setAutoscroll(!autoscroll)}
-          >
-            Autoscroll {autoscroll ? <PauseIcon size={14} /> : <PlayIcon size={14} />}
-          </button>
-          <label className={styles.speedLabel}>
-            Speed:
-            <input
-              type="range" 
-              min={0.5} max={3} step={0.1} 
-              value={scrollSpeed}
-              onChange={(e) => setScrollSpeed(parseFloat(e.target.value))}
-            />
-          </label>        </div>        <div className={styles.controlGroup}>
-          <button className={styles.controlBtn} onClick={() => jumpBars(-1)}>
-            <ArrowLeftIcon size={14} /> Bar
-          </button>
-          <span className={styles.barIndicator}>
-            Bar {currentBar === -1 ? '0 (count-in)' : currentBar + 1} / Beat {currentBeat + 1}
-          </span>
-          <button className={styles.controlBtn} onClick={() => jumpBars(1)}>
-            Bar <ArrowRightIcon size={14} />
-          </button>
-        </div>
-      </div>
-
-      {/* Media row */}
-      <div className={styles.mediaRow}>
-        {version.backingTrackUrl && (
-          <div className={styles.audioPlayer}>
-            <span>Backing Track:</span>
-            <audio controls src={version.backingTrackUrl} />
-          </div>
-        )}
-        {youtubeId && (
-          <div className={styles.videoEmbed}>
-            <iframe
-              width="320"
-              height="180"
-              src={`https://www.youtube.com/embed/${youtubeId}`}
-              title="YouTube video"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Chord strip */}
-      {chords.length > 0 && (
-        <div className={styles.chordStrip}>
-          {chords.map((chord, i) => (
-            <div key={i} className={styles.chordCard}>
-              <ChordDiagram token={chord} size={80} />
-              <span className={styles.chordName}>{chord}</span>
+      </header>      {/* Locked / Purchase prompt */}
+      {isLocked ? (
+        <div className={styles.lockedOverlay}>
+          <div className={styles.lockedCard}>
+            <div className={styles.lockIcon}>🔒</div>
+            <h3 className={styles.lockedTitle}>Premium Lesson</h3>
+            <p className={styles.lockedDesc}>
+              This lesson by <strong>{version.teacherName || 'this teacher'}</strong> is available for purchase.
+              Get full access to the sheet music, chord diagrams, backing tracks, and more.
+            </p>
+            <div className={styles.lockedPrice}>
+              ${(version.price || 0).toFixed(2)}
             </div>
-          ))}
-        </div>      )}      {/* Content with bar-based grid */}
-      <div className={styles.contentWrapper}>
-        <div ref={contentRef} className={styles.content}>
-          <div className={styles.sheetContent}>
-            {renderContent(version.content, version.blocks, { 
-              timeSig, 
-              showGrid,
-              compactMode,
-              currentBar, 
-              currentBeat, 
-              lineRefs 
-            })}
+            {purchaseError && (
+              <p className={styles.purchaseError}>{purchaseError}</p>
+            )}
+            <button
+              className={styles.purchaseBtn}
+              onClick={handlePurchase}
+              disabled={purchasing}
+            >
+              {purchasing ? 'Processing...' : `Buy for $${(version.price || 0).toFixed(2)}`}
+            </button>
+          </div>
+
+          {/* Blurred preview hint */}
+          <div className={styles.blurredPreview}>
+            <div className={styles.blurredLine} />
+            <div className={styles.blurredLine} style={{ width: '75%' }} />
+            <div className={styles.blurredLine} style={{ width: '90%' }} />
+            <div className={styles.blurredLine} style={{ width: '60%' }} />
+            <div className={styles.blurredLine} style={{ width: '85%' }} />
+            <div className={styles.blurredLine} style={{ width: '70%' }} />
           </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Controls */}
+          <div className={styles.controls}>
+            <div className={styles.controlGroup}>
+              <button 
+                className={`${styles.controlBtn} ${showGrid ? styles.active : ''}`}
+                onClick={() => setShowGrid(!showGrid)}
+              >
+                Bars {showGrid ? 'ON' : 'OFF'}
+              </button>
+              {showGrid && (
+                <button 
+                  className={`${styles.controlBtn} ${!compactMode ? styles.active : ''}`}
+                  onClick={() => setCompactMode(!compactMode)}
+                >
+                  {compactMode ? 'Beats' : 'Compact'}
+                </button>
+              )}
+              <button 
+                className={`${styles.controlBtn} ${metronomeOn ? styles.active : ''}`}
+                onClick={() => setMetronomeOn(!metronomeOn)}
+              >
+                Metronome {metronomeOn ? <PauseIcon size={14} /> : <PlayIcon size={14} />}
+              </button>
+              <button 
+                className={`${styles.controlBtn} ${autoscroll ? styles.active : ''}`}
+                onClick={() => setAutoscroll(!autoscroll)}
+              >
+                Autoscroll {autoscroll ? <PauseIcon size={14} /> : <PlayIcon size={14} />}
+              </button>
+              <label className={styles.speedLabel}>
+                Speed:
+                <input
+                  type="range" 
+                  min={0.5} max={3} step={0.1} 
+                  value={scrollSpeed}
+                  onChange={(e) => setScrollSpeed(parseFloat(e.target.value))}
+                />
+              </label>
+            </div>
+            <div className={styles.controlGroup}>
+              <button className={styles.controlBtn} onClick={() => jumpBars(-1)}>
+                <ArrowLeftIcon size={14} /> Bar
+              </button>
+              <span className={styles.barIndicator}>
+                Bar {currentBar === -1 ? '0 (count-in)' : currentBar + 1} / Beat {currentBeat + 1}
+              </span>
+              <button className={styles.controlBtn} onClick={() => jumpBars(1)}>
+                Bar <ArrowRightIcon size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* Media row */}
+          <div className={styles.mediaRow}>
+            {version.backingTrackUrl && (
+              <div className={styles.audioPlayer}>
+                <span>Backing Track:</span>
+                <audio controls src={version.backingTrackUrl} />
+              </div>
+            )}
+            {youtubeId && (
+              <div className={styles.videoEmbed}>
+                <iframe
+                  width="320"
+                  height="180"
+                  src={`https://www.youtube.com/embed/${youtubeId}`}
+                  title="YouTube video"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Chord strip */}
+          {chords.length > 0 && (
+            <div className={styles.chordStrip}>
+              {chords.map((chord, i) => (
+                <div key={i} className={styles.chordCard}>
+                  <ChordDiagram token={chord} size={80} />
+                  <span className={styles.chordName}>{chord}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Content with bar-based grid */}
+          <div className={styles.contentWrapper}>
+            <div ref={contentRef} className={styles.content}>
+              <div className={styles.sheetContent}>
+                {renderContent(version.content, version.blocks, { 
+                  timeSig, 
+                  showGrid,
+                  compactMode,
+                  currentBar, 
+                  currentBeat, 
+                  lineRefs 
+                })}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Other versions */}
       {allVersions && allVersions.length > 1 && (

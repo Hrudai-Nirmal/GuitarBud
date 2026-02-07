@@ -8,6 +8,7 @@ import ChordCharts from './components/ChordCharts'
 import ScaleCharts from './components/ScaleCharts'
 import Performance from './components/Performance'
 import TeacherDashboard from './components/TeacherDashboard'
+import MyLessons from './components/MyLessons'
 import { GuitarIcon, DownloadIcon, BookIcon, ArrowLeftIcon } from './components/Icons'
 import { apiFetch } from './api'
 import { save, load } from './utils/storage'
@@ -124,13 +125,7 @@ function App() {
       )}
 
       {view === 'mylessons' && (
-        <div className={styles.placeholder}>
-          <div className={styles.placeholderContent}>
-            <span className={styles.placeholderIcon}><BookIcon size={48} /></span>
-            <h2>My Lessons</h2>
-            <p>Your purchased lessons will appear here.</p>
-          </div>
-        </div>
+        <MyLessons token={token} />
       )}
     </div>
   )
