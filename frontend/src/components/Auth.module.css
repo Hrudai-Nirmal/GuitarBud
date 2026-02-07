@@ -1,11 +1,32 @@
 .wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(rgba(3,3,3,0.45),rgba(3,3,3,0.45)),url('/pexels2.jpg') center/cover no-repeat}
-.card{background:rgba(8,8,8,0.85);padding:28px;border-radius:12px;min-width:360px;max-width:720px;color:#eee;box-shadow:0 8px 40px rgba(0,0,0,0.6)}
-h2{margin:0 0 12px 0}
+.card{background:rgba(8,8,8,0.85);padding:28px;border-radius:12px;min-width:360px;max-width:720px;color:#eee;box-shadow:0 8px 40px rgba(0,0,0,0.6);backdrop-filter:blur(12px)}
+h2{margin:0 0 12px 0;font-size:1.5rem;letter-spacing:0.04em}
+.subtitle{color:#9fb7ff;margin:0 0 16px 0;font-size:0.95rem}
 .form{display:flex;flex-direction:column;gap:10px}
 .input{padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:#fff;font-size:1rem}
-.btn{padding:10px 14px;border-radius:8px;background:#646cff;border:none;color:#081124;font-weight:600;cursor:pointer}
-.link{background:transparent;border:none;color:#9fb7ff;cursor:pointer}
+.input:focus{outline:none;border-color:rgba(100,108,255,0.5);box-shadow:0 0 0 2px rgba(100,108,255,0.15)}
+.btn{padding:10px 14px;border-radius:8px;background:#646cff;border:none;color:#081124;font-weight:600;cursor:pointer;transition:background 0.2s}
+.btn:hover{background:#7c83ff}
+.link{background:transparent;border:none;color:#9fb7ff;cursor:pointer;font-size:0.92rem}
+.link:hover{text-decoration:underline}
 .row{display:flex;gap:12px;align-items:center}
 .label{color:#dfe7ff}
-.error{color:#ff7b7b;margin-top:8px}
+.error{color:#ff7b7b;margin-top:8px;font-size:0.93rem;background:rgba(255,80,80,0.08);padding:8px 12px;border-radius:8px;border:1px solid rgba(255,80,80,0.15)}
 .resetForm{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+
+/* Role selection buttons on login */
+.roleButtons{display:flex;gap:12px;margin:4px 0 8px}
+.roleBtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px 14px;border-radius:12px;border:2px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#eee;cursor:pointer;transition:all 0.25s ease}
+.roleBtn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.3)}
+.studentBtn:hover{border-color:rgba(100,108,255,0.5);background:rgba(100,108,255,0.08)}
+.teacherBtn:hover{border-color:rgba(255,170,60,0.5);background:rgba(255,170,60,0.08)}
+.roleBtnIcon{font-size:2rem;line-height:1}
+.roleBtnLabel{font-weight:600;font-size:1rem}
+.roleBtnDesc{font-size:0.82rem;color:#8899bb;font-weight:400}
+.loginFooter{text-align:center;margin-top:4px}
+
+/* Badge showing selected role in login form */
+.loginRoleBadge{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;background:rgba(100,108,255,0.1);border:1px solid rgba(100,108,255,0.2);font-size:0.93rem;color:#c5caff}
+.loginRoleBadge strong{color:#fff}
+.changeRole{background:transparent;border:none;color:#9fb7ff;cursor:pointer;font-size:0.85rem;margin-left:auto;padding:2px 6px;border-radius:4px}
+.changeRole:hover{background:rgba(100,108,255,0.15);text-decoration:underline}

@@ -161,16 +161,25 @@ async function start() {
   });
 
   app.post('/auth/login', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, role: requestedRole } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'invalid_input' });
     const user = await users.findOne({ email });
     if (!user) return res.status(401).json({ error: 'invalid_credentials' });
     const bcrypt = require('bcrypt');
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ error: 'invalid_credentials' });
+    const actualRole = user.role || 'student';
+    // If caller specified a role, enforce it matches
+    if (requestedRole && requestedRole !== actualRole) {
+      if (requestedRole === 'teacher') {
+        return res.status(403).json({ error: 'no_teacher_account', message: 'No teacher account found for this email. Please register as a teacher or login as a student.' });
+      } else {
+        return res.status(403).json({ error: 'no_student_account', message: 'No student account found for this email. Please register as a student or login as a teacher.' });
+      }
+    }
     const jwt = require('jsonwebtoken');
-    const token = jwt.sign({ sub: String(user._id), email: user.email, role: user.role || 'student' }, JWT_SECRET, { expiresIn: '7d' });
-    return res.json({ token, role: user.role || 'student' });
+    const token = jwt.sign({ sub: String(user._id), email: user.email, role: actualRole }, JWT_SECRET, { expiresIn: '7d' });
+    return res.json({ token, role: actualRole });
   });
 
   // JWT middleware

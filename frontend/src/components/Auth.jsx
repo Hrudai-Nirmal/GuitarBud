@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import styles from './Auth.module.css'
+import { GuitarIcon, TeacherIcon } from './Icons'
 
 export default function Auth({ onAuth }) {
   const [mode, setMode] = useState('login')
@@ -7,26 +8,35 @@ export default function Auth({ onAuth }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [role, setRole] = useState('student')
+  const [loginRole, setLoginRole] = useState(null) // null = choose, 'student' or 'teacher'
   const [resumeFile, setResumeFile] = useState(null)
   const [resetMode, setResetMode] = useState('request') // or 'confirm'
   const [resetToken, setResetToken] = useState('')
   const [newPassword, setNewPassword] = useState('')
+
+  const ERROR_MESSAGES = {
+    invalid_credentials: 'Invalid email or password.',
+    no_teacher_account: 'No teacher account found for this email. Register as a teacher or login as a student.',
+    no_student_account: 'No student account found for this email. Register as a student or login as a teacher.',
+    invalid_input: 'Please enter both email and password.',
+  }
 
   async function submit(e) {
     e.preventDefault()
     setError(null)
     if (mode === 'login') {
       const url = '/auth/login'
-      try {        const res = await fetch((import.meta.env.VITE_API_BASE || '').replace(/\/+$/, '') + url, {
+      try {
+        const res = await fetch((import.meta.env.VITE_API_BASE || '').replace(/\/+$/, '') + url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email, password, role: loginRole }),
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'failed')
-        if (mode === 'login') onAuth(data.token, data.role || 'student')
+        onAuth(data.token, data.role || 'student')
       } catch (e) {
-        setError(e.message)
+        setError(ERROR_MESSAGES[e.message] || e.message)
       }
       return
     }
@@ -107,10 +117,34 @@ export default function Auth({ onAuth }) {
   return (
     <div className={styles.wrap}>
       <div className={styles.card}>
-        <h2>{mode === 'login' ? 'Login' : 'Register'}</h2>
+        <h2>{mode === 'login' ? 'Welcome to MUSES' : 'Create Account'}</h2>
 
-        {mode === 'login' && (
+        {mode === 'login' && !loginRole && (
+          <div className={styles.form}>
+            <p className={styles.subtitle}>How would you like to sign in?</p>
+            <div className={styles.roleButtons}>              <button className={`${styles.roleBtn} ${styles.studentBtn}`} onClick={() => { setLoginRole('student'); setError(null) }}>
+                <span className={styles.roleBtnIcon}><GuitarIcon size={32} /></span>
+                <span className={styles.roleBtnLabel}>Login as Student</span>
+                <span className={styles.roleBtnDesc}>Practice, learn, and grow</span>
+              </button>
+              <button className={`${styles.roleBtn} ${styles.teacherBtn}`} onClick={() => { setLoginRole('teacher'); setError(null) }}>
+                <span className={styles.roleBtnIcon}><TeacherIcon size={32} /></span>
+                <span className={styles.roleBtnLabel}>Login as Teacher</span>
+                <span className={styles.roleBtnDesc}>Create and manage lessons</span>
+              </button>
+            </div>
+            <div className={styles.loginFooter}>
+              <button type="button" className={styles.link} onClick={() => setMode('register')}>Create account</button>
+            </div>
+          </div>
+        )}
+
+        {mode === 'login' && loginRole && (
           <form onSubmit={submit} className={styles.form}>
+            <div className={styles.loginRoleBadge}>
+              Signing in as <strong>{loginRole === 'teacher' ? 'Teacher' : 'Student'}</strong>
+              <button type="button" className={styles.changeRole} onClick={() => { setLoginRole(null); setError(null) }}>Change</button>
+            </div>
             <input className={styles.input} placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
             <input className={styles.input} placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -154,7 +188,7 @@ export default function Auth({ onAuth }) {
 
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button className={styles.btn} type="submit">Register</button>
-              <button type="button" className={styles.link} onClick={() => setMode('login')}>Back to login</button>
+              <button type="button" className={styles.link} onClick={() => { setMode('login'); setLoginRole(null); setError(null) }}>Back to login</button>
             </div>
 
             {error && <div className={styles.error}>{error}</div>}
