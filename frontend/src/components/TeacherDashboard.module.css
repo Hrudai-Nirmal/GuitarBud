@@ -393,6 +393,16 @@
   gap: 16px;
 }
 
+.keyRow {
+  display: flex;
+  gap: 6px;
+}
+
+.keyRow .select {
+  flex: 1;
+  min-width: 0;
+}
+
 .formGroup {
   display: flex;
   flex-direction: column;

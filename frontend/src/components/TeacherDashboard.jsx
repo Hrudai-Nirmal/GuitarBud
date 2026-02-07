@@ -17,6 +17,7 @@ const TABS = [
 ]
 
 const KEY_OPTIONS = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B']
+const KEY_QUALITY_OPTIONS = ['major', 'minor']
 const TIME_SIG_OPTIONS = ['2/4', '3/4', '4/4', '5/4', '6/8', '7/8']
 
 export default function TeacherDashboard({ token }) {
@@ -41,10 +42,10 @@ export default function TeacherDashboard({ token }) {
   function getEmptyEditor() {
     return {
       songTitle: '',
-      songArtist: '',
-      songId: null,
+      songArtist: '',      songId: null,
       content: '',
       key: 'C',
+      keyQuality: 'major',
       bpm: 120,
       capo: 0,
       timeSignature: '4/4',
@@ -103,9 +104,9 @@ export default function TeacherDashboard({ token }) {
     setEditorData({
       songTitle: lesson.song?.title || '',
       songArtist: lesson.song?.artist || '',
-      songId: lesson.songId,
-      content: lesson.content || '',
+      songId: lesson.songId,      content: lesson.content || '',
       key: lesson.key || 'C',
+      keyQuality: lesson.keyQuality || 'major',
       bpm: lesson.bpm || 120,
       capo: lesson.capo || 0,
       timeSignature: lesson.timeSignature || '4/4',
@@ -173,11 +174,10 @@ export default function TeacherDashboard({ token }) {
           title: editorData.songTitle.trim(),
           artist: editorData.songArtist.trim(),
         })
-      }
-
-      const versionPayload = {
+      }      const versionPayload = {
         content: editorData.content,
         key: editorData.key,
+        keyQuality: editorData.keyQuality,
         bpm: Number(editorData.bpm) || 120,
         capo: Number(editorData.capo) || 0,
         timeSignature: editorData.timeSignature,
@@ -350,7 +350,7 @@ export default function TeacherDashboard({ token }) {
                     <span className={styles.lessonArtist}>{lesson.song?.artist || 'Unknown Artist'}</span>
                   </div>
                   <div className={styles.lessonMeta}>
-                    <span className={styles.keyBadge}>{lesson.key || 'C'}</span>
+                    <span className={styles.keyBadge}>{lesson.key || 'C'}{lesson.keyQuality === 'minor' ? 'm' : ''}</span>
                     <span className={styles.bpmBadge}>{lesson.bpm || 120} bpm</span>
                   </div>
                 </div>
@@ -475,17 +475,25 @@ export default function TeacherDashboard({ token }) {
 
           {/* Musical Settings */}
           <section className={styles.formSection}>
-            <h3 className={styles.sectionTitle}>Musical Settings</h3>
-            <div className={styles.settingsGrid}>
+            <h3 className={styles.sectionTitle}>Musical Settings</h3>            <div className={styles.settingsGrid}>
               <div className={styles.formGroup}>
                 <label>Key</label>
-                <select
-                  value={editorData.key}
-                  onChange={e => setEditorData(prev => ({ ...prev, key: e.target.value }))}
-                  className={styles.select}
-                >
-                  {KEY_OPTIONS.map(k => <option key={k} value={k}>{k}</option>)}
-                </select>
+                <div className={styles.keyRow}>
+                  <select
+                    value={editorData.key}
+                    onChange={e => setEditorData(prev => ({ ...prev, key: e.target.value }))}
+                    className={styles.select}
+                  >
+                    {KEY_OPTIONS.map(k => <option key={k} value={k}>{k}</option>)}
+                  </select>
+                  <select
+                    value={editorData.keyQuality}
+                    onChange={e => setEditorData(prev => ({ ...prev, keyQuality: e.target.value }))}
+                    className={styles.select}
+                  >
+                    {KEY_QUALITY_OPTIONS.map(q => <option key={q} value={q}>{q}</option>)}
+                  </select>
+                </div>
               </div>
               <div className={styles.formGroup}>
                 <label>BPM</label>

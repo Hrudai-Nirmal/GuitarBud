@@ -325,7 +325,7 @@ export default function LessonViewer({ song, version, allVersions, onSelectVersi
           <h2 className={styles.artistName}>{song?.artist || 'Unknown Artist'}</h2>
         </div>
         <div className={styles.meta}>
-          <span className={styles.metaItem}>Key: <strong>{version.key || 'C'}</strong></span>
+          <span className={styles.metaItem}>Key: <strong>{version.key || 'C'}{version.keyQuality === 'minor' ? 'm' : ''}</strong></span>
           <span className={styles.metaItem}>
             BPM: <input 
               type="number" 
