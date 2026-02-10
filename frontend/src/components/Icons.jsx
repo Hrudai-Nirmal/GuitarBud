@@ -395,6 +395,31 @@ export const ToggleOffIcon = ({ size = 24, className = '' }) => (
   </Icon>
 )
 
+// Search/Browse icon - teal magnifying glass 🔍
+export const SearchIcon = ({ size = 24, className = '' }) => (
+  <Icon size={size} className={className}>
+    <circle cx="11" cy="11" r="7" stroke="#14B8A6" strokeWidth="2.5" fill="none"/>
+    <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="#14B8A6" strokeWidth="2.5" strokeLinecap="round"/>
+    <circle cx="11" cy="11" r="3" fill="rgba(20,184,166,0.2)"/>
+  </Icon>
+)
+
+// Lock icon - gold padlock 🔒
+export const LockIcon = ({ size = 24, className = '' }) => (
+  <Icon size={size} className={className}>
+    <rect x="5" y="11" width="14" height="10" rx="2" fill="#F59E0B"/>
+    <path d="M8 11V7C8 4.79 9.79 3 12 3C14.21 3 16 4.79 16 7V11" stroke="#D97706" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+    <circle cx="12" cy="16" r="1.5" fill="#92400E"/>
+  </Icon>
+)
+
+// Star icon - gold star ⭐
+export const StarIcon = ({ size = 24, className = '' }) => (
+  <Icon size={size} className={className}>
+    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#FCD34D" stroke="#F59E0B" strokeWidth="0.5"/>
+  </Icon>
+)
+
 export default {
   GuitarIcon,
   MusicNoteIcon,
@@ -431,7 +456,9 @@ export default {
   ExitIcon,
   TeacherIcon,
   DollarIcon,
-  ChartIcon,
-  ToggleOnIcon,
+  ChartIcon,  ToggleOnIcon,
   ToggleOffIcon,
+  SearchIcon,
+  LockIcon,
+  StarIcon,
 }

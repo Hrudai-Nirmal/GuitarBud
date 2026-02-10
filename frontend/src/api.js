@@ -46,6 +46,18 @@ async function purchaseVersion(token, versionId) { return apiFetch(`/api/purchas
 async function checkAccess(token, versionId) { return apiFetch(`/api/versions/${versionId}/access`, token) }
 async function getFullVersion(token, versionId) { return apiFetch(`/api/versions/${versionId}/full`, token) }
 
+// Browse lessons (student discovery)
+async function browseLessons(token, { q, key, minPrice, maxPrice, sort } = {}) {
+  const params = new URLSearchParams()
+  if (q) params.set('q', q)
+  if (key) params.set('key', key)
+  if (minPrice) params.set('minPrice', minPrice)
+  if (maxPrice) params.set('maxPrice', maxPrice)
+  if (sort) params.set('sort', sort)
+  const qs = params.toString()
+  return apiFetch(`/api/lessons/browse${qs ? '?' + qs : ''}`, token)
+}
+
 export { apiFetch, getSongs, searchSongs, getSong, getVersion, createSong, getSetlists, createSetlist,
   getMyLessons, updateVersion, deleteVersion, updateSong, createVersion, getTeacherStats,
-  getMyPurchases, purchaseVersion, checkAccess, getFullVersion }
+  getMyPurchases, purchaseVersion, checkAccess, getFullVersion, browseLessons }

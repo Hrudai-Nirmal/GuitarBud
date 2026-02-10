@@ -8,16 +8,17 @@ import {
   TunerIcon, 
   DownloadIcon, 
   BookIcon,
-  TeacherIcon 
+  TeacherIcon,
+  SearchIcon 
 } from './Icons'
 
 const STUDENT_TILES = [
   { id: 'practice', label: 'Practice', Icon: MusicNoteIcon, desc: 'Browse and learn songs', size: 'large', gradient: 'purple' },
+  { id: 'browse', label: 'Browse Lessons', Icon: SearchIcon, desc: 'Discover premium content', size: 'medium', gradient: 'teal' },
   { id: 'performance', label: 'Performance', Icon: MicrophoneIcon, desc: 'Sessions & Setlists', size: 'medium', gradient: 'pink' },
-  { id: 'chords', label: 'Chord Charts', Icon: GuitarIcon, desc: 'Reference diagrams', size: 'medium', gradient: 'teal' },
-  { id: 'scales', label: 'Scale Charts', Icon: ScaleIcon, desc: 'Scale patterns', size: 'small', gradient: 'indigo' },
-  { id: 'tuner', label: 'Tuner', Icon: TunerIcon, desc: 'Tune your guitar', size: 'small', gradient: 'blue' },
-  { id: 'downloads', label: 'Downloaded', Icon: DownloadIcon, desc: 'Offline lessons', size: 'small', gradient: 'orange' },
+  { id: 'chords', label: 'Chord Charts', Icon: GuitarIcon, desc: 'Reference diagrams', size: 'small', gradient: 'indigo' },
+  { id: 'scales', label: 'Scale Charts', Icon: ScaleIcon, desc: 'Scale patterns', size: 'small', gradient: 'blue' },
+  { id: 'tuner', label: 'Tuner', Icon: TunerIcon, desc: 'Tune your guitar', size: 'small', gradient: 'orange' },
   { id: 'mylessons', label: 'My Lessons', Icon: BookIcon, desc: 'Purchased content', size: 'small', gradient: 'green' },
 ]
 

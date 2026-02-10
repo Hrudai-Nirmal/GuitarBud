@@ -9,6 +9,7 @@ import ScaleCharts from './components/ScaleCharts'
 import Performance from './components/Performance'
 import TeacherDashboard from './components/TeacherDashboard'
 import MyLessons from './components/MyLessons'
+import BrowseLessons from './components/BrowseLessons'
 import { GuitarIcon, DownloadIcon, BookIcon, ArrowLeftIcon } from './components/Icons'
 import { apiFetch } from './api'
 import { save, load } from './utils/storage'
@@ -126,6 +127,10 @@ function App() {
 
       {view === 'mylessons' && (
         <MyLessons token={token} />
+      )}
+
+      {view === 'browse' && (
+        <BrowseLessons token={token} />
       )}
     </div>
   )

@@ -1,0 +1,406 @@
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  color: #eee;
+  height: 100%;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* ── Back button ── */
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #aaa;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  align-self: flex-start;
+}
+.backBtn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+}
+.subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #888;
+}
+
+/* ── Filters Bar ── */
+.filtersBar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 8px 14px;
+  flex: 1;
+  min-width: 200px;
+  transition: border-color 0.2s;
+}
+.searchBox:focus-within {
+  border-color: rgba(20,184,166,0.5);
+}
+
+.searchInput {
+  background: none;
+  border: none;
+  outline: none;
+  color: #eee;
+  font-size: 0.95rem;
+  flex: 1;
+  min-width: 0;
+}
+.searchInput::placeholder {
+  color: #666;
+}
+
+.filterGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.filterSelect {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #ccc;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.filterSelect:focus {
+  border-color: rgba(20,184,166,0.5);
+}
+.filterSelect option {
+  background: #1a1a2e;
+  color: #eee;
+}
+
+/* ── States ── */
+.error {
+  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.2);
+  border-radius: 10px;
+  color: #f87171;
+  padding: 12px 16px;
+  font-size: 0.9rem;
+}
+
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: #888;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: #14b8a6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 20px;
+  text-align: center;
+  color: #888;
+}
+.emptyState h3 {
+  margin: 0;
+  color: #aaa;
+  font-size: 1.2rem;
+}
+.emptyState p {
+  margin: 0;
+  font-size: 0.9rem;
+  max-width: 360px;
+}
+
+.resultCount {
+  font-size: 0.8rem;
+  color: #666;
+  letter-spacing: 0.02em;
+}
+
+/* ── Lesson Grid ── */
+.lessonGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+/* ── Lesson Card ── */
+.lessonCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 18px;
+  transition: transform 0.15s ease, border-color 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+}
+.lessonCard:hover {
+  border-color: rgba(255,255,255,0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+
+.purchasedCard {
+  border-color: rgba(74,222,128,0.2);
+}
+.purchasedCard:hover {
+  border-color: rgba(74,222,128,0.35);
+}
+
+/* Card header */
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.cardTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cardArtist {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+/* Meta badges */
+.cardMeta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.keyBadge,
+.bpmBadge,
+.capoBadge,
+.timeBadge {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.keyBadge {
+  background: rgba(139,92,246,0.15);
+  color: #c4b5fd;
+}
+.bpmBadge {
+  background: rgba(59,130,246,0.15);
+  color: #93c5fd;
+}
+.capoBadge {
+  background: rgba(249,115,22,0.15);
+  color: #fdba74;
+}
+.timeBadge {
+  background: rgba(20,184,166,0.15);
+  color: #5eead4;
+}
+
+/* Teacher row */
+.teacherRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #999;
+}
+
+/* Rating row */
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: #fcd34d;
+}
+.ratingCount {
+  color: #666;
+  font-size: 0.75rem;
+}
+
+/* Footer: price + button */
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.price {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #4ade80;
+}
+
+.buyBtn {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.buyBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(74,222,128,0.3);
+}
+.buyBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.openBtn {
+  background: rgba(99,102,241,0.15);
+  color: #a5b4fc;
+  border: 1px solid rgba(99,102,241,0.25);
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.openBtn:hover {
+  background: rgba(99,102,241,0.25);
+  border-color: rgba(99,102,241,0.4);
+}
+
+/* Card message (purchase success/error) */
+.cardMsg {
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  text-align: center;
+}
+.msgSuccess {
+  background: rgba(74,222,128,0.1);
+  color: #4ade80;
+}
+.msgError {
+  background: rgba(248,113,113,0.1);
+  color: #f87171;
+}
+
+/* Purchased ribbon */
+.purchasedRibbon {
+  position: absolute;
+  top: 12px;
+  right: -28px;
+  background: #22c55e;
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 3px 32px;
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .container {
+    padding: 12px;
+  }
+
+  .filtersBar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .searchBox {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .filterGroup {
+    width: 100%;
+  }
+
+  .filterSelect {
+    flex: 1;
+  }
+
+  .lessonGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .title {
+    font-size: 1.3rem;
+  }
+}

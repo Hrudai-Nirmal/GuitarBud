@@ -200,7 +200,6 @@ async function start() {
     const token = jwt.sign({ sub: String(user._id), email: user.email, role: loginRole }, JWT_SECRET, { expiresIn: '7d' });
     return res.json({ token, role: loginRole, roles: userRoles });
   });
-
   // JWT middleware
   const jwt = require('jsonwebtoken');
   function authMiddleware(req, res, next) {
@@ -215,6 +214,18 @@ async function start() {
     } catch (e) {
       return res.status(401).json({ error: 'invalid_token' });
     }
+  }
+
+  // Optional auth — attaches user if token present, but doesn't require it
+  function optionalAuth(req, res, next) {
+    const auth = req.headers.authorization;
+    if (!auth) return next();
+    const parts = auth.split(' ');
+    if (parts.length !== 2) return next();
+    try {
+      req.user = jwt.verify(parts[1], JWT_SECRET);
+    } catch (_) { /* ignore bad tokens */ }
+    next();
   }
   app.get('/api/me', authMiddleware, async (req, res) => {
     // Fetch fresh roles from DB in case they were updated after token was issued
@@ -255,9 +266,86 @@ async function start() {
       const song = await songs.findOne({ _id: new ObjectId(ver.songId) });
       res.json({ ...ver, song });
     } catch (e) {
-      return res.status(400).json({ error: 'invalid_id' });
+      return res.status(400).json({ error: 'invalid_id' });    }
+  });
+
+  // ========== BROWSE LESSONS (student discovery) ==========
+  // Returns monetized lessons with song info, teacher info, and purchase status
+  app.get('/api/lessons/browse', optionalAuth, async (req, res) => {
+    try {
+      const { q, key, minPrice, maxPrice, sort } = req.query;
+
+      // Build version filter: only monetized lessons
+      const vFilter = { monetized: true };
+      if (key) vFilter.key = key;
+      if (minPrice || maxPrice) {
+        vFilter.price = {};
+        if (minPrice) vFilter.price.$gte = parseFloat(minPrice);
+        if (maxPrice) vFilter.price.$lte = parseFloat(maxPrice);
+      }
+
+      // If text search query, first find matching song IDs
+      let songIdFilter = null;
+      if (q && q.trim()) {
+        const matchingSongs = await songs.find({ $text: { $search: q } }).project({ _id: 1 }).toArray();
+        songIdFilter = matchingSongs.map(s => String(s._id));
+        // Also match teacher name
+        vFilter.$or = [
+          { songId: { $in: songIdFilter } },
+          { teacherName: { $regex: q.trim(), $options: 'i' } }
+        ];
+      }
+
+      // Determine sort order
+      let sortOpt = { createdAt: -1 }; // default: newest
+      if (sort === 'price_asc') sortOpt = { price: 1 };
+      else if (sort === 'price_desc') sortOpt = { price: -1 };
+      else if (sort === 'rating') sortOpt = { rating: -1 };
+
+      const lessonVersions = await versions.find(vFilter).sort(sortOpt).limit(100).toArray();
+
+      if (lessonVersions.length === 0) return res.json([]);
+
+      // Attach song info
+      const songIds = [...new Set(lessonVersions.map(v => v.songId))];
+      const songList = await songs.find({ _id: { $in: songIds.map(id => new ObjectId(id)) } }).toArray();
+      const songMap = {};
+      songList.forEach(s => { songMap[String(s._id)] = s; });
+
+      // Check purchase status if user is authenticated
+      let purchasedSet = new Set();
+      if (req.user) {
+        const userPurchases = await purchases.find({ userId: req.user.sub }).toArray();
+        userPurchases.forEach(p => purchasedSet.add(p.versionId));
+      }
+
+      const result = lessonVersions.map(v => ({
+        _id: v._id,
+        songId: v.songId,
+        teacherId: v.teacherId,
+        teacherName: v.teacherName,
+        key: v.key,
+        keyQuality: v.keyQuality || 'major',
+        bpm: v.bpm,
+        capo: v.capo,
+        timeSignature: v.timeSignature,
+        rating: v.rating,
+        ratingCount: v.ratingCount,
+        monetized: true,
+        price: v.price || 0,
+        createdAt: v.createdAt,
+        song: songMap[v.songId] || null,
+        purchased: purchasedSet.has(String(v._id))
+        // Note: content/blocks intentionally omitted — must purchase or use /full endpoint
+      }));
+
+      res.json(result);
+    } catch (e) {
+      console.error('browse lessons error', e);
+      return res.status(500).json({ error: 'server_error' });
     }
   });
+
   // ========== TEACHER: Create/update songs & versions ==========
   // Create song (teacher only)
   app.post('/api/songs', authMiddleware, async (req, res) => {
@@ -302,8 +390,7 @@ async function start() {
   // Create version for a song (teacher only)
   app.post('/api/songs/:songId/versions', authMiddleware, async (req, res) => {
     if (req.user.role !== 'teacher') return res.status(403).json({ error: 'teachers_only' });
-    const { songId } = req.params;
-    const { content, key, bpm, capo, timeSignature, backingTrackUrl, youtubeUrl, blocks, monetized, price } = req.body;
+    const { songId } = req.params;    const { content, key, keyQuality, bpm, capo, timeSignature, backingTrackUrl, youtubeUrl, blocks, monetized, price } = req.body;
     // blocks: [{ type: 'lyrics'|'tabs', beatStart, beatEnd, data }]
     const user = await users.findOne({ _id: new ObjectId(req.user.sub) });
     const versionData = {
@@ -312,6 +399,7 @@ async function start() {
       teacherName: user?.email || 'Unknown',
       content: content || '',
       key: key || 'C',
+      keyQuality: keyQuality || 'major',
       bpm: bpm || 120,
       capo: capo || 0,
       timeSignature: timeSignature || '4/4',
@@ -376,11 +464,11 @@ async function start() {
       const ver = await versions.findOne({ _id: new ObjectId(req.params.id) });
       if (!ver) return res.status(404).json({ error: 'not_found' });
       if (ver.teacherId !== req.user.sub) return res.status(403).json({ error: 'not_owner' });
-      
-      const { content, key, bpm, capo, timeSignature, backingTrackUrl, youtubeUrl, blocks, monetized, price } = req.body;
+        const { content, key, keyQuality, bpm, capo, timeSignature, backingTrackUrl, youtubeUrl, blocks, monetized, price } = req.body;
       const updateData = {
         ...(content !== undefined && { content }),
         ...(key !== undefined && { key }),
+        ...(keyQuality !== undefined && { keyQuality }),
         ...(bpm !== undefined && { bpm }),
         ...(capo !== undefined && { capo }),
         ...(timeSignature !== undefined && { timeSignature }),
