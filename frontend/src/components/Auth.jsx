@@ -10,7 +10,7 @@ export default function Auth({ onAuth }) {
   const [role, setRole] = useState('student')
   const [loginRole, setLoginRole] = useState(null) // null = choose, 'student' or 'teacher'
   const [resumeFile, setResumeFile] = useState(null)
-  const [resetMode, setResetMode] = useState('request') // or 'confirm'
+  const [resetMode, setResetMode] = useState(null) // null, 'request', or 'confirm'
   const [resetToken, setResetToken] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const ERROR_MESSAGES = {
@@ -106,10 +106,9 @@ export default function Auth({ onAuth }) {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: resetToken, password: newPassword })
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'failed')
-      // back to login
+      if (!res.ok) throw new Error(data.error || 'failed')      // back to login
       setMode('login')
-      setResetMode('request')
+      setResetMode(null)
       setNewPassword('')
       setResetToken('')
     } catch (e) {
@@ -154,19 +153,18 @@ export default function Auth({ onAuth }) {
               <button className={styles.btn} type="submit">Login</button>
               <button type="button" className={styles.link} onClick={() => setMode('register')}>Create account</button>
               <button type="button" className={styles.link} onClick={() => setResetMode('request')}>Forgot password?</button>
-            </div>
-            {resetMode === 'request' && (
-              <form onSubmit={handleRequestReset} className={styles.resetForm}>
+            </div>            {resetMode === 'request' && (
+              <div className={styles.resetForm}>
                 <input className={styles.input} placeholder="Email for reset" value={email} onChange={(e) => setEmail(e.target.value)} />
-                <button className={styles.btn} onClick={handleRequestReset}>Request reset</button>
-              </form>
+                <button type="button" className={styles.btn} onClick={handleRequestReset}>Request reset</button>
+              </div>
             )}
             {resetMode === 'confirm' && (
-              <form onSubmit={handleConfirmReset} className={styles.resetForm}>
+              <div className={styles.resetForm}>
                 <input className={styles.input} placeholder="Reset token" value={resetToken} onChange={(e) => setResetToken(e.target.value)} />
                 <input className={styles.input} placeholder="New password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-                <button className={styles.btn} onClick={handleConfirmReset}>Reset password</button>
-              </form>
+                <button type="button" className={styles.btn} onClick={handleConfirmReset}>Reset password</button>
+              </div>
             )}
             {error && <div className={styles.error}>{error}</div>}
           </form>
