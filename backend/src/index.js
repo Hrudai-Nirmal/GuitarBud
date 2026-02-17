@@ -9,7 +9,28 @@ const WebSocket = require('ws');
 
 const app = express();
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173' }));
+
+// CORS: support comma-separated origins in CORS_ORIGIN, plus always allow localhost dev
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+app.use(cors({
+  origin(origin, callback) {
+    // Allow requests with no origin (curl, mobile apps, server-to-server)
+    if (!origin) return callback(null, true);
+    // Allow any Vercel preview/deployment URL for this project
+    if (allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin)) {
+      return callback(null, origin);
+    }
+    // Allow localhost for development
+    if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+      return callback(null, origin);
+    }
+    callback(null, false);
+  },
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan('dev'));
 

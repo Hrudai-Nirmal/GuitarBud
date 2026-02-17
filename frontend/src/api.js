@@ -6,6 +6,9 @@ function getBase() {
   return base.replace(/\/+$/, '')
 }
 
+// Export for Auth.jsx and other components that need the raw base URL
+function getApiBase() { return getBase() }
+
 function apiFetch(path, token, opts = {}) {
   const base = getBase()
   const headers = opts.headers || {}
@@ -58,6 +61,6 @@ async function browseLessons(token, { q, key, minPrice, maxPrice, sort } = {}) {
   return apiFetch(`/api/lessons/browse${qs ? '?' + qs : ''}`, token)
 }
 
-export { apiFetch, getSongs, searchSongs, getSong, getVersion, createSong, getSetlists, createSetlist,
+export { apiFetch, getApiBase, getSongs, searchSongs, getSong, getVersion, createSong, getSetlists, createSetlist,
   getMyLessons, updateVersion, deleteVersion, updateSong, createVersion, getTeacherStats,
   getMyPurchases, purchaseVersion, checkAccess, getFullVersion, browseLessons }

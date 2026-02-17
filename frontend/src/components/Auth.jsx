@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import styles from './Auth.module.css'
 import { GuitarIcon, TeacherIcon } from './Icons'
+import { getApiBase } from '../api'
 
 export default function Auth({ onAuth }) {
   const [mode, setMode] = useState('login')
@@ -28,7 +29,7 @@ export default function Auth({ onAuth }) {
     if (mode === 'login') {
       const url = '/auth/login'
       try {
-        const res = await fetch((import.meta.env.VITE_API_BASE || '').replace(/\/+$/, '') + url, {
+        const res = await fetch(getApiBase() + url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password, role: loginRole }),
@@ -55,7 +56,7 @@ export default function Auth({ onAuth }) {
         })
       }
 
-      const res = await fetch((import.meta.env.VITE_API_BASE || '').replace(/\/+$/, '') + url, {
+      const res = await fetch(getApiBase() + url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, role, resume: resumeData ? { name: resumeFile.name, data: resumeData } : null }),
@@ -64,7 +65,7 @@ export default function Auth({ onAuth }) {
       if (!res.ok) throw new Error(data.error || 'failed')
       // if register returned a verifyToken in dev, automatically verify
       if (data.verifyToken) {
-        await fetch((import.meta.env.VITE_API_BASE || '') + '/auth/verify', {
+        await fetch(getApiBase() + '/auth/verify', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: data.verifyToken })
         })
       }
@@ -80,7 +81,7 @@ export default function Auth({ onAuth }) {
     e.preventDefault()
     setError(null)
     try {
-      const res = await fetch((import.meta.env.VITE_API_BASE || '') + '/auth/request-reset', {
+      const res = await fetch(getApiBase() + '/auth/request-reset', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
       })
       const data = await res.json()
@@ -102,11 +103,12 @@ export default function Auth({ onAuth }) {
     e.preventDefault()
     setError(null)
     try {
-      const res = await fetch((import.meta.env.VITE_API_BASE || '') + '/auth/reset', {
+      const res = await fetch(getApiBase() + '/auth/reset', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: resetToken, password: newPassword })
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'failed')      // back to login
+      if (!res.ok) throw new Error(data.error || 'failed')
+      // back to login
       setMode('login')
       setResetMode(null)
       setNewPassword('')
@@ -124,7 +126,8 @@ export default function Auth({ onAuth }) {
         {mode === 'login' && !loginRole && (
           <div className={styles.form}>
             <p className={styles.subtitle}>How would you like to sign in?</p>
-            <div className={styles.roleButtons}>              <button className={`${styles.roleBtn} ${styles.studentBtn}`} onClick={() => { setLoginRole('student'); setError(null) }}>
+            <div className={styles.roleButtons}>
+              <button className={`${styles.roleBtn} ${styles.studentBtn}`} onClick={() => { setLoginRole('student'); setError(null) }}>
                 <span className={styles.roleBtnIcon}><GuitarIcon size={32} /></span>
                 <span className={styles.roleBtnLabel}>Login as Student</span>
                 <span className={styles.roleBtnDesc}>Practice, learn, and grow</span>
@@ -153,7 +156,8 @@ export default function Auth({ onAuth }) {
               <button className={styles.btn} type="submit">Login</button>
               <button type="button" className={styles.link} onClick={() => setMode('register')}>Create account</button>
               <button type="button" className={styles.link} onClick={() => setResetMode('request')}>Forgot password?</button>
-            </div>            {resetMode === 'request' && (
+            </div>
+            {resetMode === 'request' && (
               <div className={styles.resetForm}>
                 <input className={styles.input} placeholder="Email for reset" value={email} onChange={(e) => setEmail(e.target.value)} />
                 <button type="button" className={styles.btn} onClick={handleRequestReset}>Request reset</button>
