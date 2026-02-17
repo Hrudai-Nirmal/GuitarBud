@@ -18,9 +18,8 @@ const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
 app.use(cors({
   origin(origin, callback) {
     // Allow requests with no origin (curl, mobile apps, server-to-server)
-    if (!origin) return callback(null, true);
-    // Allow any Vercel preview/deployment URL for this project
-    if (allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin)) {
+    if (!origin) return callback(null, true);    // Allow any Vercel preview/deployment URL, plus custom domain
+    if (allowedOrigins.includes(origin) || /\.vercel\.app$/.test(origin) || /\.hrudainirmal\.in$/.test(origin)) {
       return callback(null, origin);
     }
     // Allow localhost for development
