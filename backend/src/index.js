@@ -85,7 +85,7 @@ async function start() {
         return res.status(409).json({ error: 'role_exists', message: `You already have a ${requestedRole} account. Try logging in instead.` });
       }
       // Verify password matches the existing account
-      const bcrypt = require('bcrypt');
+      const bcrypt = require('bcryptjs');
       const ok = await bcrypt.compare(password, existing.password);
       if (!ok) return res.status(401).json({ error: 'invalid_credentials', message: 'An account with this email exists. Enter your current password to add the new role.' });
       // Add the new role
@@ -96,7 +96,7 @@ async function start() {
       return res.json({ id: existing._id, email, role: requestedRole, roles: updatedRoles, addedRole: true });
     }
 
-    const bcrypt = require('bcrypt');
+    const bcrypt = require('bcryptjs');
     const hashed = await bcrypt.hash(password, 10);
     const verifyToken = require('crypto').randomBytes(24).toString('hex');
     const userData = { 
@@ -172,7 +172,7 @@ async function start() {
     if (!token || !password) return res.status(400).json({ error: 'invalid_input' });
     const u = await users.findOne({ resetToken: token, resetExpires: { $gt: new Date() } });
     if (!u) return res.status(400).json({ error: 'invalid_token' });
-    const bcrypt = require('bcrypt');
+    const bcrypt = require('bcryptjs');
     const hashed = await bcrypt.hash(password, 10);
     await users.updateOne({ _id: u._id }, { $set: { password: hashed }, $unset: { resetToken: '', resetExpires: '' } });
     return res.json({ ok: true });
@@ -182,7 +182,7 @@ async function start() {
     if (!email || !password) return res.status(400).json({ error: 'invalid_input' });
     const user = await users.findOne({ email });
     if (!user) return res.status(401).json({ error: 'invalid_credentials' });
-    const bcrypt = require('bcrypt');
+    const bcrypt = require('bcryptjs');
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ error: 'invalid_credentials' });
     // Support both legacy single role and new roles array
