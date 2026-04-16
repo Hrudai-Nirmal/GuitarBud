@@ -680,7 +680,6 @@ async function start() {
       return res.status(500).json({ error: 'server_error' });
     }
   });
-
   // ========== SETLISTS ==========
   app.get('/api/setlists', authMiddleware, async (req, res) => {
     const list = await setlists.find({ owner: req.user.sub }).toArray();
@@ -693,6 +692,43 @@ async function start() {
     payload.createdAt = new Date();
     const result = await setlists.insertOne(payload);
     res.json({ id: result.insertedId });
+  });
+
+  // Update setlist (owner only)
+  app.put('/api/setlists/:id', authMiddleware, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const existing = await setlists.findOne({ _id: new ObjectId(id) });
+      if (!existing) return res.status(404).json({ error: 'not_found' });
+      if (existing.owner !== req.user.sub) return res.status(403).json({ error: 'not_owner' });
+
+      const { name, songs: setlistSongs } = req.body || {};
+      const update = {
+        ...(name !== undefined && { name }),
+        ...(setlistSongs !== undefined && { songs: setlistSongs }),
+        updatedAt: new Date()
+      };
+
+      await setlists.updateOne({ _id: existing._id }, { $set: update });
+      res.json({ ok: true });
+    } catch (e) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+  });
+
+  // Delete setlist (owner only)
+  app.delete('/api/setlists/:id', authMiddleware, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const existing = await setlists.findOne({ _id: new ObjectId(id) });
+      if (!existing) return res.status(404).json({ error: 'not_found' });
+      if (existing.owner !== req.user.sub) return res.status(403).json({ error: 'not_owner' });
+
+      await setlists.deleteOne({ _id: existing._id });
+      res.json({ ok: true });
+    } catch (e) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
   });
 
   // ========== SESSIONS ==========

@@ -34,6 +34,8 @@ async function getVersion(token, id) { return apiFetch(`/api/versions/${id}`, to
 async function createSong(token, payload) { return apiFetch('/api/songs', token, { method: 'POST', body: JSON.stringify(payload) }) }
 async function getSetlists(token) { return apiFetch('/api/setlists', token) }
 async function createSetlist(token, payload) { return apiFetch('/api/setlists', token, { method: 'POST', body: JSON.stringify(payload) }) }
+async function updateSetlist(token, id, payload) { return apiFetch(`/api/setlists/${id}`, token, { method: 'PUT', body: JSON.stringify(payload) }) }
+async function deleteSetlist(token, id) { return apiFetch(`/api/setlists/${id}`, token, { method: 'DELETE' }) }
 
 // Teacher API helpers
 async function getMyLessons(token) { return apiFetch('/api/my-lessons', token) }
@@ -61,6 +63,6 @@ async function browseLessons(token, { q, key, minPrice, maxPrice, sort } = {}) {
   return apiFetch(`/api/lessons/browse${qs ? '?' + qs : ''}`, token)
 }
 
-export { apiFetch, getApiBase, getSongs, searchSongs, getSong, getVersion, createSong, getSetlists, createSetlist,
+export { apiFetch, getApiBase, getSongs, searchSongs, getSong, getVersion, createSong, getSetlists, createSetlist, updateSetlist, deleteSetlist,
   getMyLessons, updateVersion, deleteVersion, updateSong, createVersion, getTeacherStats,
   getMyPurchases, purchaseVersion, checkAccess, getFullVersion, browseLessons }

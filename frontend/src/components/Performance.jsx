@@ -4,6 +4,7 @@ import ChordDiagram from './ChordDiagram'
 import { transposeChordPro } from '../utils/chords'
 import { save, load } from '../utils/storage'
 import useWebSocket from '../hooks/useWebSocket'
+import { getSetlists, createSetlist as apiCreateSetlist, updateSetlist as apiUpdateSetlist, deleteSetlist as apiDeleteSetlist } from '../api'
 import {
   ClipboardIcon,
   EditIcon,
@@ -211,26 +212,46 @@ export default function Performance({ token }) {
     return () => scrollEl.removeEventListener('scroll', handleScroll)
   }, [sessionActive, isHost, sessionCode, send])
 
-  // Load saved data on mount
+  // Load saved data on mount (prefer server setlists, fallback to local)
   useEffect(() => {
-    const savedSetlists = load('performanceSetlists') || []
     const savedSongs = load('performanceSongs') || []
-    setSetlists(savedSetlists)
     setSongs(savedSongs)
-  }, [])
 
-  // Save setlists when changed
+    let cancelled = false
+    ;(async () => {
+      try {
+        if (!token) {
+          const savedSetlists = load('performanceSetlists') || []
+          if (!cancelled) setSetlists(savedSetlists)
+          return
+        }
+        const serverSetlists = await getSetlists(token)
+        const mapped = (serverSetlists || []).map(s => ({
+          id: s._id,
+          name: s.name || 'Setlist',
+          songs: s.songs || [],
+          owner: s.owner,
+          createdAt: s.createdAt,
+          updatedAt: s.updatedAt,
+        }))
+        if (!cancelled) setSetlists(mapped)
+      } catch (e) {
+        const savedSetlists = load('performanceSetlists') || []
+        if (!cancelled) setSetlists(savedSetlists)
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [token])
+
+  // Save setlists locally (also persist empty array)
   useEffect(() => {
-    if (setlists.length > 0) {
-      save('performanceSetlists', setlists)
-    }
+    save('performanceSetlists', setlists)
   }, [setlists])
 
-  // Save songs when changed
+  // Save songs when changed (persist empty array too)
   useEffect(() => {
-    if (songs.length > 0) {
-      save('performanceSongs', songs)
-    }
+    save('performanceSongs', songs)
   }, [songs])
 
   // Auto-scroll effect
@@ -254,42 +275,84 @@ export default function Performance({ token }) {
   }, [autoScroll, scrollSpeed])
 
   // ========== Setlist Functions ==========
-  function createSetlist() {
-    const newSetlist = { ...DEFAULT_SETLIST, id: Date.now(), name: `Setlist ${setlists.length + 1}` }
+  async function createSetlist() {
+    // Create locally immediately for a responsive UI
+    const localId = Date.now().toString()
+    const newSetlist = { ...DEFAULT_SETLIST, id: localId, name: `Setlist ${setlists.length + 1}`, songs: [] }
     setSetlists([...setlists, newSetlist])
     setActiveSetlist(newSetlist)
+
+    // Persist to server if authenticated
+    if (!token) return
+    try {
+      const resp = await apiCreateSetlist(token, { name: newSetlist.name, songs: newSetlist.songs })
+      const serverId = resp?.id
+      if (!serverId) return
+      setSetlists(prev => prev.map(s => s.id === localId ? { ...s, id: serverId } : s))
+      setActiveSetlist(prev => (prev?.id === localId ? { ...prev, id: serverId } : prev))
+    } catch (e) {
+      // keep local-only setlist if server save fails
+    }
   }
 
-  function updateSetlistName(id, name) {
+  async function updateSetlistName(id, name) {
     setSetlists(setlists.map(s => s.id === id ? { ...s, name } : s))
     if (activeSetlist?.id === id) {
       setActiveSetlist({ ...activeSetlist, name })
     }
+
+    if (!token) return
+    try {
+      await apiUpdateSetlist(token, id, { name })
+    } catch (e) {
+      // ignore; local still updated
+    }
   }
 
-  function deleteSetlist(id) {
+  async function deleteSetlist(id) {
     setSetlists(setlists.filter(s => s.id !== id))
     if (activeSetlist?.id === id) {
       setActiveSetlist(null)
     }
+
+    if (!token) return
+    try {
+      await apiDeleteSetlist(token, id)
+    } catch (e) {
+      // ignore
+    }
   }
 
-  function addSongToSetlist(song) {
+  async function addSongToSetlist(song) {
     if (!activeSetlist) return
     const updated = { ...activeSetlist, songs: [...activeSetlist.songs, { ...song, setlistOrder: activeSetlist.songs.length }] }
     setSetlists(setlists.map(s => s.id === activeSetlist.id ? updated : s))
     setActiveSetlist(updated)
+
+    if (!token) return
+    try {
+      await apiUpdateSetlist(token, updated.id, { songs: updated.songs })
+    } catch (e) {
+      // ignore
+    }
   }
 
-  function removeSongFromSetlist(index) {
+  async function removeSongFromSetlist(index) {
     if (!activeSetlist) return
     const newSongs = activeSetlist.songs.filter((_, i) => i !== index)
     const updated = { ...activeSetlist, songs: newSongs }
     setSetlists(setlists.map(s => s.id === activeSetlist.id ? updated : s))
     setActiveSetlist(updated)
+
+    if (!token) return
+    try {
+      await apiUpdateSetlist(token, updated.id, { songs: updated.songs })
+    } catch (e) {
+      // ignore
+    }
   }
 
-  function moveSong(index, direction) {
+  async function moveSong(index, direction) {
     if (!activeSetlist) return
     const newSongs = [...activeSetlist.songs]
     const newIndex = index + direction
@@ -298,6 +361,13 @@ export default function Performance({ token }) {
     const updated = { ...activeSetlist, songs: newSongs }
     setSetlists(setlists.map(s => s.id === activeSetlist.id ? updated : s))
     setActiveSetlist(updated)
+
+    if (!token) return
+    try {
+      await apiUpdateSetlist(token, updated.id, { songs: updated.songs })
+    } catch (e) {
+      // ignore
+    }
   }
 
   // ========== Song Editor Functions ==========
